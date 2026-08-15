@@ -7,11 +7,11 @@ real fund, market price, or investment result.
   assumption.
 - `prices/YYYY.csv` contains the canonical price/NAV history, partitioned by
   year. The current toy fixture is monthly; the same layout supports daily rows.
-- `fundamentals/index_valuation_baselines.csv` stores one starting P/E and P/B
-  for each tracked index.
-- `fundamentals/index_valuation_events.csv` stores sparse quarterly earnings
-  and book-value indices. SQLite uses these with prices to derive historical
-  P/E and P/B, rather than storing a valuation row as a source file every day.
+- `fundamentals/index_valuation_snapshots.csv` stores directly reported
+  quarterly P/E and P/B ratios for each tracked index. SQLite converts each
+  report into an implied earnings/book-value-per-unit value using the price at
+  that report date, then derives P/E and P/B for each later price observation
+  until the next quarterly report.
 - `metrics/YYYY-MM-DD.csv` is a compact generated screener snapshot.
 
 Run `python3 scripts/generate_price_history.py`, then

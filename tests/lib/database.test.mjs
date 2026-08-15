@@ -10,6 +10,11 @@ test("reads ETF facts, metrics, and complete history from SQLite", () => {
   assert.ok(etf.peRatio > 0);
   const count = db.prepare("SELECT COUNT(*) AS count FROM return_history r JOIN etfs e ON e.id = r.etf_id WHERE e.symbol = ?").get("USP500");
   assert.deepEqual(count, { count: 61 });
+  const valuationCount = db.prepare("SELECT COUNT(*) AS count FROM valuation_history v JOIN etfs e ON e.id = v.etf_id WHERE e.symbol = ?").get("USP500");
+  assert.deepEqual(valuationCount, { count: 61 });
+  const betweenReports = db.prepare("SELECT date, pe_ratio AS peRatio FROM valuation_history v JOIN etfs e ON e.id = v.etf_id WHERE e.symbol = ? AND v.date IN (?, ?) ORDER BY v.date").all("USP500", "2025-10-31", "2025-11-30");
+  assert.equal(betweenReports.length, 2);
+  assert.notEqual(betweenReports[0].peRatio, betweenReports[1].peRatio);
 });
 
 test("supports the screener's indexed market and currency query", () => {

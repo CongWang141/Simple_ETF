@@ -1,4 +1,4 @@
-"""Recreate SQLite from partitioned prices and sparse valuation inputs."""
+"""Recreate SQLite from partitioned prices and direct valuation snapshots."""
 
 from __future__ import annotations
 
@@ -43,12 +43,11 @@ def main() -> None:
     etfs = read_csv(SOURCE / "etfs.csv")
     metrics = {row["symbol"]: row for row in latest_metrics()}
     prices = all_prices()
-    baselines = {row["tracking_index"]: row for row in read_csv(SOURCE / "fundamentals" / "index_valuation_baselines.csv")}
-    events: dict[str, list[dict[str, str]]] = defaultdict(list)
-    for row in read_csv(SOURCE / "fundamentals" / "index_valuation_events.csv"):
-        events[row["tracking_index"]].append(row)
-    for value in events.values():
-        value.sort(key=lambda row: row["effective_date"])
+    snapshots: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in read_csv(SOURCE / "fundamentals" / "index_valuation_snapshots.csv"):
+        snapshots[row["tracking_index"]].append(row)
+    for value in snapshots.values():
+        value.sort(key=lambda row: row["as_of_date"])
 
     DATABASE.unlink(missing_ok=True)
     connection = sqlite3.connect(DATABASE)
@@ -67,25 +66,33 @@ def main() -> None:
             grouped_prices: dict[str, list[dict[str, str]]] = defaultdict(list)
             for row in prices:
                 grouped_prices[row["symbol"]].append(row)
-            valuation_at_date: dict[tuple[str, str], tuple[float, float]] = {}
             return_rows = []
             valuation_rows = []
+            valuation_at_date: dict[tuple[str, str], tuple[float, float]] = {}
             for symbol, series in grouped_prices.items():
                 series.sort(key=lambda row: row["date"])
                 etf = etf_by_symbol[symbol]
-                base = baselines[etf["tracking_index"]]
-                event_series = events[etf["tracking_index"]]
-                base_price = float(series[0]["close_price"])
-                previous_price = base_price
+                previous_price = float(series[0]["close_price"])
                 previous_date = date.fromisoformat(series[0]["date"])
                 total_return_index = 100.0
-                event_position = 0
-                active_event = event_series[0]
+                snapshot_series = snapshots[etf["tracking_index"]]
+                snapshot_reference_prices: list[float] = []
+                price_position = 0
+                for snapshot in snapshot_series:
+                    while price_position + 1 < len(series) and series[price_position + 1]["date"] <= snapshot["as_of_date"]:
+                        price_position += 1
+                    snapshot_reference_prices.append(float(series[price_position]["close_price"]))
+
+                snapshot_position = -1
+                earnings_per_unit = book_value_per_unit = None
                 for row in series:
                     row_date = date.fromisoformat(row["date"])
-                    while event_position + 1 < len(event_series) and event_series[event_position + 1]["effective_date"] <= row["date"]:
-                        event_position += 1
-                        active_event = event_series[event_position]
+                    while snapshot_position + 1 < len(snapshot_series) and snapshot_series[snapshot_position + 1]["as_of_date"] <= row["date"]:
+                        snapshot_position += 1
+                        snapshot = snapshot_series[snapshot_position]
+                        reference_price = snapshot_reference_prices[snapshot_position]
+                        earnings_per_unit = reference_price / float(snapshot["pe_ratio"])
+                        book_value_per_unit = reference_price / float(snapshot["pb_ratio"])
                     close_price = float(row["close_price"])
                     if row is series[0]:
                         price_return = total_return = 0.0
@@ -94,10 +101,11 @@ def main() -> None:
                         total_return = price_return + float(etf["assumed_annual_distribution_yield"]) * ((row_date - previous_date).days / 365.25)
                         total_return_index *= 1 + total_return
                     return_rows.append((etf_ids[symbol], row["date"], price_return * 100, total_return * 100, total_return_index, total_return_index - 100))
-                    pe_ratio = float(base["base_pe_ratio"]) * (close_price / base_price) / (float(active_event["earnings_index"]) / 100)
-                    pb_ratio = float(base["base_pb_ratio"]) * (close_price / base_price) / (float(active_event["book_value_index"]) / 100)
-                    valuation_rows.append((etf_ids[symbol], row["date"], pe_ratio, pb_ratio))
-                    valuation_at_date[(symbol, row["date"])] = (pe_ratio, pb_ratio)
+                    if earnings_per_unit is not None and book_value_per_unit is not None:
+                        pe_ratio = close_price / earnings_per_unit
+                        pb_ratio = close_price / book_value_per_unit
+                        valuation_rows.append((etf_ids[symbol], row["date"], pe_ratio, pb_ratio))
+                        valuation_at_date[(symbol, row["date"])] = (pe_ratio, pb_ratio)
                     previous_price, previous_date = close_price, row_date
 
             connection.executemany("INSERT INTO price_history (etf_id, date, close_price, currency) VALUES (?, ?, ?, ?)", [(etf_ids[row["symbol"]], row["date"], float(row["close_price"]), row["currency"]) for row in prices])

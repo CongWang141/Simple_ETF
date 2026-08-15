@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { HistoricalReturnChart } from "@/components/charts/HistoricalReturnChart";
 import { formatFundSize, formatPercent, formatTer } from "@/lib/formatters";
-import type { EtfSummary, HistoricalObservation } from "@/lib/types";
+import type { EtfSummary, HistoricalObservation, HistoricalValuationObservation } from "@/lib/types";
 
 const returnMetrics = [
   ["1M", "return1mPct"], ["3M", "return3mPct"], ["6M", "return6mPct"], ["YTD", "returnYtdPct"],
   ["1Y", "return1yPct"], ["3Y", "return3yPct"], ["5Y", "return5yPct"], ["Since inception", "returnSinceInceptionPct"],
 ] as const;
 
-export function EtfDetail({ etf, observations }: { etf: EtfSummary; observations: HistoricalObservation[] }) {
+export function EtfDetail({ etf, observations, valuations }: { etf: EtfSummary; observations: HistoricalObservation[]; valuations: HistoricalValuationObservation[] }) {
   return (
     <main className="page-shell detail-page" id="main-content">
       <Link className="back-link" href="/">← Back to screener</Link>
@@ -33,7 +33,7 @@ export function EtfDetail({ etf, observations }: { etf: EtfSummary; observations
       </section>
 
       <section className="detail-layout">
-        <HistoricalReturnChart observations={observations} />
+        <HistoricalReturnChart observations={observations} valuations={valuations} />
         <aside className="facts-card">
           <p className="section-label">Fund facts</p>
           <dl>

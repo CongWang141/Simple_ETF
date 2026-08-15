@@ -6,8 +6,8 @@ of truth; `data/simple_etf.sqlite` is generated and must not be edited by hand.
 ## Refresh workflow
 
 1. Update ETF facts in `data/source/etfs.csv`.
-2. Update sparse baseline and quarterly valuation inputs in
-   `data/source/fundamentals/` when earnings or book-value assumptions change.
+2. Add directly reported quarterly P/E and P/B observations to
+   `data/source/fundamentals/index_valuation_snapshots.csv`.
 3. If changing price/volatility assumptions, update
    `scripts/generate_price_history.py` and run:
 
