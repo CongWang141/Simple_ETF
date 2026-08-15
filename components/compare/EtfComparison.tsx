@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { buildComparisonOverlay } from "@/lib/return-calculations";
 import type { EtfSummary, HistoricalObservation } from "@/lib/types";
 
 type NumericMetricKey = "peRatio" | "pbRatio" | "return1mPct" | "return3mPct" | "returnYtdPct" | "return1yPct" | "return3yPct" | "return5yPct";
@@ -54,25 +55,8 @@ export function EtfComparison({ etfs, histories }: { etfs: EtfSummary[]; histori
   const selectedEtfs = etfs.filter((etf) => selectedSymbols.includes(etf.symbol));
 
   const overlay = useMemo(() => {
-    if (selectedEtfs.length < 2) return { data: [], message: "Select at least two ETFs to compare their shared return history." };
-    const selectedHistories = selectedEtfs.map((etf) => histories[etf.symbol] ?? []);
-    const commonDates = selectedHistories.reduce<string[] | null>((shared, history) => {
-      const dates = new Set(history.map((point) => point.date));
-      return shared === null ? [...dates] : shared.filter((date) => dates.has(date));
-    }, null)?.sort() ?? [];
-    if (!commonDates.length) return { data: [], message: "These ETFs have no overlapping history, so a comparison chart cannot be shown." };
-
-    const valueBySymbol = Object.fromEntries(selectedEtfs.map((etf) => [etf.symbol, new Map((histories[etf.symbol] ?? []).map((point) => [point.date, point.totalReturnIndex]))]));
-    const baseDate = commonDates[0];
-    const data = commonDates.map((date) => {
-      const row: Record<string, string | number> = { date, label: formatChartDate(date) };
-      for (const etf of selectedEtfs) {
-        const series = valueBySymbol[etf.symbol];
-        row[etf.symbol] = Number((((series.get(date)! / series.get(baseDate)!) - 1) * 100).toFixed(2));
-      }
-      return row;
-    });
-    return { data, message: `Common history: ${baseDate} to ${commonDates.at(-1)} (${commonDates.length} monthly observations). Each series is rebased to 0% at the common start.` };
+    const result = buildComparisonOverlay(selectedEtfs.map((etf) => etf.symbol), histories);
+    return { ...result, data: result.data.map((point) => ({ ...point, label: formatChartDate(String(point.date)) })) };
   }, [histories, selectedEtfs]);
 
   function toggle(symbol: string) {
@@ -84,7 +68,7 @@ export function EtfComparison({ etfs, histories }: { etfs: EtfSummary[]; histori
   }
 
   return (
-    <main className="page-shell comparison-page">
+    <main className="page-shell comparison-page" id="main-content">
       <Link className="back-link" href="/">← Back to screener</Link>
       <header className="comparison-heading">
         <div><p className="eyebrow">ETF comparison</p><h1>Compare your short list.</h1></div>

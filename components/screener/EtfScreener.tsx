@@ -3,10 +3,9 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { formatFundSize, formatPercent, formatTer } from "@/lib/formatters";
+import { filterAndSortEtfs } from "@/lib/screener";
 import type { EtfSummary } from "@/lib/types";
-
-type FilterKey = "assetClass" | "region" | "issuer" | "currency" | "distributionPolicy";
-type SortKey = "fundSizeMillionUsd" | "return1yPct" | "return3yPct" | "ter" | "name";
+import type { FilterKey, SortKey } from "@/lib/screener";
 
 const filterLabels: Record<FilterKey, string> = {
   assetClass: "Asset class",
@@ -38,17 +37,7 @@ export function EtfScreener({ etfs }: { etfs: EtfSummary[] }) {
     (Object.keys(filterLabels) as FilterKey[]).map((key) => [key, [...new Set(etfs.map((etf) => etf[key]))].sort()]),
   ) as Record<FilterKey, string[]>, [etfs]);
 
-  const results = useMemo(() => etfs
-    .filter((etf) => (Object.entries(filters) as [FilterKey, string][]).every(([key, value]) => !value || etf[key] === value))
-    .filter((etf) => !maxTer || etf.ter <= Number(maxTer))
-    .sort((left, right) => {
-      const leftValue = left[sortKey];
-      const rightValue = right[sortKey];
-      const comparison = typeof leftValue === "number" && typeof rightValue === "number"
-        ? leftValue - rightValue
-        : String(leftValue).localeCompare(String(rightValue));
-      return sortDirection === "asc" ? comparison : -comparison;
-    }), [etfs, filters, maxTer, sortDirection, sortKey]);
+  const results = useMemo(() => filterAndSortEtfs(etfs, filters, maxTer, sortKey, sortDirection), [etfs, filters, maxTer, sortDirection, sortKey]);
 
   function updateFilter(key: FilterKey, value: string) {
     setFilters((current) => ({ ...current, [key]: value }));

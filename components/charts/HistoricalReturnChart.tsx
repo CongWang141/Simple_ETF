@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { normalizeReturnIndex } from "@/lib/return-calculations";
 import type { HistoricalObservation } from "@/lib/types";
 
 type Period = "1Y" | "3Y" | "5Y" | "Max";
@@ -16,11 +17,10 @@ export function HistoricalReturnChart({ observations }: { observations: Historic
   const [period, setPeriod] = useState<Period>("5Y");
   const chartData = useMemo(() => {
     const visible = period === "Max" ? observations : observations.slice(-periodLengths[period]);
-    const baseIndex = visible[0]?.totalReturnIndex ?? 100;
-    return visible.map((point) => ({
+    return normalizeReturnIndex(visible).map((point) => ({
       date: point.date,
       label: formatDate(point.date),
-      returnPct: Number((((point.totalReturnIndex / baseIndex) - 1) * 100).toFixed(2)),
+      returnPct: point.normalizedReturnPct,
     }));
   }, [observations, period]);
 

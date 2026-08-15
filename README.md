@@ -25,3 +25,7 @@ sample database.
 
 Phase 1 provides local fixture CSVs, a reproducible SQLite seeder, and typed
 read-only queries. The screener interface begins in Phase 2.
+
+For the fixture-data refresh workflow, see [data updates](docs/data-updates.md).
+For the automated checks and a short keyboard/layout review, see the
+[quality checklist](docs/quality-checklist.md).

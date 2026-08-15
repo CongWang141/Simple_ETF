@@ -10,7 +10,7 @@ const returnMetrics = [
 
 export function EtfDetail({ etf, observations }: { etf: EtfSummary; observations: HistoricalObservation[] }) {
   return (
-    <main className="page-shell detail-page">
+    <main className="page-shell detail-page" id="main-content">
       <Link className="back-link" href="/">← Back to screener</Link>
       <header className="detail-hero">
         <div>
