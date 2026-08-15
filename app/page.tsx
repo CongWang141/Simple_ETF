@@ -1,4 +1,5 @@
 import { EtfScreener } from "@/components/screener/EtfScreener";
+import Link from "next/link";
 import { listEtfs } from "@/lib/etfs";
 
 export default function HomePage() {
@@ -12,6 +13,7 @@ export default function HomePage() {
         Explore a small, illustrative ETF universe by region, issuer, currency, distribution policy, and fee.
       </p>
       <p className="data-note">All prices, returns, valuations, and fund facts are synthetic local fixtures as of 31 Dec 2025.</p>
+      <Link className="compare-link" href="/compare">Compare ETFs →</Link>
       <EtfScreener etfs={etfs} />
     </main>
   );
