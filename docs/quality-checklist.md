@@ -25,7 +25,7 @@ a visible amber `:focus-visible` outline.
 Before each handoff, run `npm run dev` locally and make this short review:
 
 1. On `/`, Tab through each filter, reset button, sort controls, and ETF links.
-2. On `/etfs/USP500`, Tab to the period buttons and activate one with Enter or
+2. On `/etfs/USST01`, Tab to the period buttons and activate one with Enter or
    Space.
 3. On `/compare`, Tab through the ETF checkboxes; select two ETFs, then remove
    one to confirm the comparison guidance appears.

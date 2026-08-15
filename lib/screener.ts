@@ -1,13 +1,12 @@
 import type { EtfSummary } from "./types";
 
-export type FilterKey = "assetClass" | "region" | "issuer" | "currency" | "distributionPolicy";
+export type FilterKey = "assetClass" | "region" | "country" | "industry" | "strategy" | "distributionPolicy";
 export type SortKey = "fundSizeMillionUsd" | "return1yPct" | "return3yPct" | "ter" | "name";
 export type ScreenerFilters = Partial<Record<FilterKey, string>>;
 
-export function filterAndSortEtfs(etfs: EtfSummary[], filters: ScreenerFilters, maxTer: string, sortKey: SortKey, sortDirection: "asc" | "desc") {
+export function filterAndSortEtfs(etfs: EtfSummary[], filters: ScreenerFilters, sortKey: SortKey, sortDirection: "asc" | "desc") {
   return [...etfs]
     .filter((etf) => (Object.entries(filters) as [FilterKey, string][]).every(([key, value]) => !value || etf[key] === value))
-    .filter((etf) => !maxTer || etf.ter <= Number(maxTer))
     .sort((left, right) => {
       const leftValue = left[sortKey];
       const rightValue = right[sortKey];

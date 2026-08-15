@@ -10,8 +10,9 @@ import type { FilterKey, SortKey } from "@/lib/screener";
 const filterLabels: Record<FilterKey, string> = {
   assetClass: "Asset class",
   region: "Region",
-  issuer: "Issuer",
-  currency: "Currency",
+  country: "Country",
+  industry: "Industry",
+  strategy: "Strategy",
   distributionPolicy: "Distribution",
 };
 
@@ -29,15 +30,15 @@ function Metric({ value }: { value: number }) {
 
 export function EtfScreener({ etfs }: { etfs: EtfSummary[] }) {
   const [filters, setFilters] = useState<Partial<Record<FilterKey, string>>>({});
-  const [maxTer, setMaxTer] = useState("");
+  const [compareSymbols, setCompareSymbols] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<SortKey>("fundSizeMillionUsd");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
   const filterOptions = useMemo(() => Object.fromEntries(
-    (Object.keys(filterLabels) as FilterKey[]).map((key) => [key, [...new Set(etfs.map((etf) => etf[key]))].sort()]),
+    (Object.keys(filterLabels) as FilterKey[]).map((key) => [key, [...new Set(etfs.map((etf) => etf[key]).filter((value): value is string => Boolean(value)))].sort()]),
   ) as Record<FilterKey, string[]>, [etfs]);
 
-  const results = useMemo(() => filterAndSortEtfs(etfs, filters, maxTer, sortKey, sortDirection), [etfs, filters, maxTer, sortDirection, sortKey]);
+  const results = useMemo(() => filterAndSortEtfs(etfs, filters, sortKey, sortDirection), [etfs, filters, sortDirection, sortKey]);
 
   function updateFilter(key: FilterKey, value: string) {
     setFilters((current) => ({ ...current, [key]: value }));
@@ -45,7 +46,13 @@ export function EtfScreener({ etfs }: { etfs: EtfSummary[] }) {
 
   function resetFilters() {
     setFilters({});
-    setMaxTer("");
+  }
+
+  function toggleComparison(symbol: string) {
+    setCompareSymbols((current) => {
+      if (current.includes(symbol)) return current.filter((item) => item !== symbol);
+      return current.length === 8 ? current : [...current, symbol];
+    });
   }
 
   return (
@@ -61,15 +68,6 @@ export function EtfScreener({ etfs }: { etfs: EtfSummary[] }) {
               </select>
             </label>
           ))}
-          <label className="control">
-            <span>Maximum TER</span>
-            <select value={maxTer} onChange={(event) => setMaxTer(event.target.value)}>
-              <option value="">Any fee</option>
-              <option value="0.2">0.20% or less</option>
-              <option value="0.3">0.30% or less</option>
-              <option value="0.5">0.50% or less</option>
-            </select>
-          </label>
         </div>
         <button className="text-button" onClick={resetFilters} type="button">Reset filters</button>
       </div>
@@ -89,17 +87,18 @@ export function EtfScreener({ etfs }: { etfs: EtfSummary[] }) {
         </div>
       </div>
 
-      <div className="table-wrap">
+      <div className="table-wrap results-window">
         <table>
           <thead>
             <tr>
               <th>ETF</th>
               <th>Index</th>
-              <th>Region</th>
+              <th>Country</th>
               <th>TER</th>
               <th>Fund size</th>
               <th>1Y return</th>
               <th>3Y return</th>
+              <th className="compare-column">Compare</th>
             </tr>
           </thead>
           <tbody>
@@ -112,16 +111,21 @@ export function EtfScreener({ etfs }: { etfs: EtfSummary[] }) {
                   </Link>
                 </td>
                 <td>{etf.trackingIndex}</td>
-                <td>{etf.region}</td>
+                <td>{etf.country}</td>
                 <td>{formatTer(etf.ter)}</td>
                 <td>{formatFundSize(etf.fundSizeMillionUsd)}</td>
                 <td><Metric value={etf.return1yPct} /></td>
                 <td><Metric value={etf.return3yPct} /></td>
+                <td className="compare-column"><input aria-label={`Select ${etf.symbol} for comparison`} checked={compareSymbols.includes(etf.symbol)} disabled={!compareSymbols.includes(etf.symbol) && compareSymbols.length === 8} onChange={() => toggleComparison(etf.symbol)} type="checkbox" /></td>
               </tr>
             ))}
           </tbody>
         </table>
         {!results.length && <p className="empty-state">No ETFs match these filters. Try resetting one or more filters.</p>}
+      </div>
+      <div className="compare-action">
+        <span>{compareSymbols.length} of 8 ETFs selected</span>
+        {compareSymbols.length >= 2 ? <Link className="compare-button" href={`/compare?symbols=${compareSymbols.join(",")}`}>Compare selected ETFs →</Link> : <span className="compare-button compare-button-disabled">Select at least 2 ETFs to compare</span>}
       </div>
     </section>
   );

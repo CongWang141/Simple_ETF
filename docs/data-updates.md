@@ -5,19 +5,21 @@ of truth; `data/simple_etf.sqlite` is generated and must not be edited by hand.
 
 ## Refresh workflow
 
-1. Update ETF facts in `data/source/etfs.csv`.
+1. Update ETF facts in `data/source/etfs.csv`, or run `npm run data:generate`
+   to regenerate the 72-ETF fictional universe. The generated universe has at
+   least five ETFs for every available filter value.
 2. Add directly reported quarterly P/E and P/B observations to
-   `data/source/fundamentals/index_valuation_snapshots.csv`.
+   `data/source/fundamentals/index_valuation_snapshots.csv`, or regenerate the
+   fictional observations with `scripts/generate_valuation_snapshots.py`.
 3. If changing price/volatility assumptions, update
    `scripts/generate_price_history.py` and run:
 
    ```bash
-   python3 scripts/generate_price_history.py
-   python3 scripts/generate_metrics_snapshot.py
+   npm run data:generate
    ```
 
-   The first command regenerates yearly files in `prices/`. The second creates
-   the latest compact screener snapshot in `metrics/`.
+   This regenerates yearly daily-price files in `prices/`, quarterly valuation
+   files in `fundamentals/`, and the latest compact screener snapshot in `metrics/`.
 
 3. Recreate and check the SQLite database:
 
@@ -35,7 +37,8 @@ of truth; `data/simple_etf.sqlite` is generated and must not be edited by hand.
    npm run build
    ```
 
-Commit the CSV fixture and source-code changes. Do not commit
+The data source directory is intentionally ignored by Git, so commit the
+scripts and code but keep your local CSV data private. Do not commit
 `data/simple_etf.sqlite`, `node_modules/`, or `.next/`.
 
 ## Data conventions

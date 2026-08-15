@@ -32,5 +32,5 @@ export function buildComparisonOverlay(symbols: string[], histories: Record<stri
     }
     return row;
   });
-  return { data, message: `Common history: ${baseDate} to ${commonDates.at(-1)} (${commonDates.length} monthly observations). Each series is rebased to 0% at the common start.` };
+  return { data, message: `Common history: ${baseDate} to ${commonDates.at(-1)} (${commonDates.length} daily observations). Each series is rebased to 0% at the common start.` };
 }
