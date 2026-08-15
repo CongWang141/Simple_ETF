@@ -19,8 +19,9 @@ sample database.
 ## Local setup
 
 1. Run `npm install`.
-2. Run `npm run dev` and open the local URL shown in the terminal.
+2. Run `npm run db:seed` to create the local SQLite database from the fixture CSVs.
+3. Run `npm run db:check` to verify the generated database.
+4. Run `npm run dev` and open the local URL shown in the terminal.
 
-The Phase 0 foundation intentionally contains only the Next.js shell, base
-styles, tooling configuration, and a placeholder database module. The ETF
-screener, local fixture data, and SQLite schema begin in Phase 1.
+Phase 1 provides local fixture CSVs, a reproducible SQLite seeder, and typed
+read-only queries. The screener interface begins in Phase 2.
