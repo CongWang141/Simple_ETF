@@ -5,17 +5,19 @@ of truth; `data/simple_etf.sqlite` is generated and must not be edited by hand.
 
 ## Refresh workflow
 
-1. Update ETF facts and illustrative valuation inputs in `data/source/etfs.csv`.
-2. If changing the return/volatility assumptions, update
+1. Update ETF facts in `data/source/etfs.csv`.
+2. Update sparse baseline and quarterly valuation inputs in
+   `data/source/fundamentals/` when earnings or book-value assumptions change.
+3. If changing price/volatility assumptions, update
    `scripts/generate_price_history.py` and run:
 
    ```bash
    python3 scripts/generate_price_history.py
-   python3 scripts/refresh_etf_summary.py
+   python3 scripts/generate_metrics_snapshot.py
    ```
 
-   The first command regenerates `price_history.csv` and `return_history.csv`.
-   The second recalculates the return-summary columns in `etfs.csv`.
+   The first command regenerates yearly files in `prices/`. The second creates
+   the latest compact screener snapshot in `metrics/`.
 
 3. Recreate and check the SQLite database:
 
@@ -39,8 +41,8 @@ Commit the CSV fixture and source-code changes. Do not commit
 ## Data conventions
 
 - Return fields are percentages, for example `12.50` means 12.50%.
-- `total_return_index` begins at 100 and assumes reinvested illustrative
-  dividends.
+- `total_return_index` is generated inside SQLite and assumes reinvested
+  illustrative dividends.
 - Historical price values remain in each ETF's stated currency; do not compare
   their price levels across currencies.
 - All values are illustrative toy data, not investment information.

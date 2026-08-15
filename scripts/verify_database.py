@@ -17,6 +17,7 @@ def main() -> None:
         assert count(connection, "etf_metrics") == 17
         assert count(connection, "price_history") == 1037
         assert count(connection, "return_history") == 1037
+        assert count(connection, "valuation_history") == 1037
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []
     finally:
         connection.close()

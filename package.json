@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "db:seed": "python3 scripts/seed_database.py",
     "db:check": "python3 scripts/verify_database.py",
+    "data:generate": "python3 scripts/generate_price_history.py && python3 scripts/generate_metrics_snapshot.py",
     "test:db": "python3 tests/lib/database.test.py",
     "test": "node --test tests/lib/*.test.mjs"
   },

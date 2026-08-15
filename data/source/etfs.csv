@@ -1,18 +1,18 @@
-symbol,name,tracking_index,market,issuer,asset_class,region,currency,domicile,inception_date,ter,fund_size_million_usd,distribution_policy,replication_method,benchmark_name,metrics_as_of_date,pe_ratio,pb_ratio,return_1m_pct,return_3m_pct,return_6m_pct,return_ytd_pct,return_1y_pct,return_3y_pct,return_5y_pct,return_since_inception_pct
-CHN300,China Core CSI 300 ETF,CSI 300,China,Atlas Index Funds,Equity,China,CNY,China,2015-06-18,0.45,1840,Accumulating,Physical,CSI 300 Index,2025-12-31,12.8,1.4,-7.80,6.72,-4.22,14.32,14.32,96.03,82.28,75.81
-CHN500,China Mid-Cap CSI 500 ETF,CSI 500,China,Atlas Index Funds,Equity,China,CNY,China,2016-03-22,0.50,920,Accumulating,Physical,CSI 500 Index,2025-12-31,20.5,2.0,-2.92,6.36,-1.16,-6.99,-6.99,-29.67,27.18,76.77
-CHN1000,China Small-Cap CSI 1000 ETF,CSI 1000,China,Atlas Index Funds,Equity,China,CNY,China,2018-09-14,0.55,610,Accumulating,Physical,CSI 1000 Index,2025-12-31,28.0,2.5,0.95,2.18,12.25,35.33,35.33,109.92,216.04,58.33
-SSE50,China Blue Chip SSE 50 ETF,SSE 50,China,Horizon Asset Management,Equity,China,CNY,China,2014-01-10,0.40,1260,Distributing,Physical,SSE 50 Index,2025-12-31,10.7,1.2,-5.48,-9.57,-4.00,-7.12,-7.12,0.99,24.14,100.90
-CHINEXT,China Growth ChiNext ETF,ChiNext,China,Horizon Asset Management,Equity,China,CNY,China,2017-05-26,0.55,780,Accumulating,Physical,ChiNext Index,2025-12-31,36.5,4.1,12.07,-8.46,4.45,-26.42,-26.42,3.21,-10.96,93.83
-USP500,US Large Cap S&P 500 ETF,S&P 500,United States,Northstar ETFs,Equity,United States,USD,United States,2012-04-12,0.10,5240,Accumulating,Physical,S&P 500 Index,2025-12-31,24.8,4.6,-9.88,-1.59,-3.45,11.88,11.88,63.40,46.42,269.73
-USN100,US Technology Nasdaq 100 ETF,Nasdaq 100,United States,Northstar ETFs,Equity,United States,USD,United States,2013-11-08,0.18,4170,Accumulating,Physical,Nasdaq-100 Index,2025-12-31,32.7,7.8,-4.94,-8.46,-3.56,8.17,8.17,96.84,110.78,296.06
-USDJIA,US Blue Chip Dow Jones ETF,Dow Jones,United States,Heritage Index Partners,Equity,United States,USD,United States,2011-07-15,0.14,2100,Distributing,Physical,Dow Jones Industrial Average,2025-12-31,22.1,5.2,4.62,8.43,-8.30,0.47,0.47,24.99,39.24,225.43
-USR2000,US Small Cap Russell 2000 ETF,Russell 2000,United States,Heritage Index Partners,Equity,United States,USD,United States,2016-10-21,0.22,1380,Accumulating,Physical,Russell 2000 Index,2025-12-31,20.4,2.1,-3.56,-11.01,-9.29,-20.41,-20.41,-16.30,-16.13,94.43
-WORLD,Global Developed MSCI World ETF,MSCI World,Global,Meridian Funds,Equity,Developed Markets,USD,Ireland,2013-02-28,0.20,3670,Accumulating,Physical,MSCI World Index,2025-12-31,21.5,3.4,1.09,7.52,11.59,-5.19,-5.19,49.19,9.63,153.06
-EMERGE,Global Emerging MSCI EM ETF,MSCI EM,Global,Meridian Funds,Equity,Emerging Markets,USD,Ireland,2014-08-07,0.28,1950,Accumulating,Physical,MSCI Emerging Markets Index,2025-12-31,15.2,2.0,-2.98,-6.80,-3.18,2.39,2.39,16.00,-16.07,84.11
-ALLWORLD,Global FTSE All-World ETF,FTSE All-World,Global,Meridian Funds,Equity,Global,USD,Ireland,2015-01-30,0.22,4320,Accumulating,Physical,FTSE All-World Index,2025-12-31,20.8,3.2,3.65,2.21,6.75,25.25,25.25,45.92,71.02,109.33
-JPN225,Japan Nikkei 225 ETF,Nikkei 225,Japan,Sakura Investments,Equity,Japan,JPY,Japan,2012-06-21,0.25,870,Distributing,Physical,Nikkei 225,2025-12-31,18.9,1.9,-1.99,-11.89,3.82,19.19,19.19,76.49,139.39,149.74
-JPTOPIX,Japan Broad TOPIX ETF,TOPIX,Japan,Sakura Investments,Equity,Japan,JPY,Japan,2013-09-13,0.22,730,Accumulating,Physical,TOPIX,2025-12-31,17.2,1.6,5.26,18.50,28.16,24.11,24.11,39.35,62.66,116.95
-KOR200,Korea KOSPI 200 ETF,KOSPI 200,South Korea,Han River Funds,Equity,South Korea,KRW,South Korea,2015-04-17,0.30,560,Accumulating,Physical,KOSPI 200,2025-12-31,13.4,1.1,1.75,-4.11,-18.13,-19.05,-19.05,-27.03,-49.61,86.62
-EU600,Europe Broad STOXX 600 ETF,STOXX Europe 600,Europe,Continental Index Funds,Equity,Europe,EUR,Ireland,2014-12-05,0.18,2890,Accumulating,Physical,STOXX Europe 600,2025-12-31,15.8,2.0,-2.23,-13.12,-15.99,-12.10,-12.10,-2.50,31.10,100.82
-GERDAX,Germany DAX ETF,DAX,Europe,Continental Index Funds,Equity,Germany,EUR,Germany,2011-03-25,0.16,1150,Distributing,Physical,DAX,2025-12-31,16.4,2.1,-0.69,-2.85,14.59,6.15,6.15,20.19,16.04,171.66
+symbol,name,tracking_index,market,issuer,asset_class,region,currency,domicile,inception_date,ter,fund_size_million_usd,distribution_policy,replication_method,benchmark_name,assumed_annual_distribution_yield
+CHN300,China Core CSI 300 ETF,CSI 300,China,Atlas Index Funds,Equity,China,CNY,China,2015-06-18,0.45,1840,Accumulating,Physical,CSI 300 Index,0.0200
+CHN500,China Mid-Cap CSI 500 ETF,CSI 500,China,Atlas Index Funds,Equity,China,CNY,China,2016-03-22,0.50,920,Accumulating,Physical,CSI 500 Index,0.0160
+CHN1000,China Small-Cap CSI 1000 ETF,CSI 1000,China,Atlas Index Funds,Equity,China,CNY,China,2018-09-14,0.55,610,Accumulating,Physical,CSI 1000 Index,0.0120
+SSE50,China Blue Chip SSE 50 ETF,SSE 50,China,Horizon Asset Management,Equity,China,CNY,China,2014-01-10,0.40,1260,Distributing,Physical,SSE 50 Index,0.0280
+CHINEXT,China Growth ChiNext ETF,ChiNext,China,Horizon Asset Management,Equity,China,CNY,China,2017-05-26,0.55,780,Accumulating,Physical,ChiNext Index,0.0080
+USP500,US Large Cap S&P 500 ETF,S&P 500,United States,Northstar ETFs,Equity,United States,USD,United States,2012-04-12,0.10,5240,Accumulating,Physical,S&P 500 Index,0.0140
+USN100,US Technology Nasdaq 100 ETF,Nasdaq 100,United States,Northstar ETFs,Equity,United States,USD,United States,2013-11-08,0.18,4170,Accumulating,Physical,Nasdaq-100 Index,0.0080
+USDJIA,US Blue Chip Dow Jones ETF,Dow Jones,United States,Heritage Index Partners,Equity,United States,USD,United States,2011-07-15,0.14,2100,Distributing,Physical,Dow Jones Industrial Average,0.0190
+USR2000,US Small Cap Russell 2000 ETF,Russell 2000,United States,Heritage Index Partners,Equity,United States,USD,United States,2016-10-21,0.22,1380,Accumulating,Physical,Russell 2000 Index,0.0130
+WORLD,Global Developed MSCI World ETF,MSCI World,Global,Meridian Funds,Equity,Developed Markets,USD,Ireland,2013-02-28,0.20,3670,Accumulating,Physical,MSCI World Index,0.0170
+EMERGE,Global Emerging MSCI EM ETF,MSCI EM,Global,Meridian Funds,Equity,Emerging Markets,USD,Ireland,2014-08-07,0.28,1950,Accumulating,Physical,MSCI Emerging Markets Index,0.0210
+ALLWORLD,Global FTSE All-World ETF,FTSE All-World,Global,Meridian Funds,Equity,Global,USD,Ireland,2015-01-30,0.22,4320,Accumulating,Physical,FTSE All-World Index,0.0180
+JPN225,Japan Nikkei 225 ETF,Nikkei 225,Japan,Sakura Investments,Equity,Japan,JPY,Japan,2012-06-21,0.25,870,Distributing,Physical,Nikkei 225,0.0160
+JPTOPIX,Japan Broad TOPIX ETF,TOPIX,Japan,Sakura Investments,Equity,Japan,JPY,Japan,2013-09-13,0.22,730,Accumulating,Physical,TOPIX,0.0200
+KOR200,Korea KOSPI 200 ETF,KOSPI 200,South Korea,Han River Funds,Equity,South Korea,KRW,South Korea,2015-04-17,0.30,560,Accumulating,Physical,KOSPI 200,0.0180
+EU600,Europe Broad STOXX 600 ETF,STOXX Europe 600,Europe,Continental Index Funds,Equity,Europe,EUR,Ireland,2014-12-05,0.18,2890,Accumulating,Physical,STOXX Europe 600,0.0280
+GERDAX,Germany DAX ETF,DAX,Europe,Continental Index Funds,Equity,Germany,EUR,Germany,2011-03-25,0.16,1150,Distributing,Physical,DAX,0.0250

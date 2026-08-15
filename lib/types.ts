@@ -3,3 +3,4 @@ export type EtfMetrics = { asOfDate: string; peRatio: number; pbRatio: number; r
 export type EtfSummary = Etf & EtfMetrics;
 export type EtfFilters = { market?: string; region?: string; issuer?: string; currency?: string; distributionPolicy?: string; maxTer?: number };
 export type HistoricalObservation = { date: string; closePrice: number; currency: string; monthlyPriceReturnPct: number; monthlyTotalReturnPct: number; totalReturnIndex: number; cumulativeTotalReturnPct: number };
+export type HistoricalValuationObservation = { date: string; peRatio: number; pbRatio: number };
