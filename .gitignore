@@ -77,6 +77,9 @@ data/*.sqlite-journal
 data/*.sqlite-shm
 data/*.sqlite-wal
 
+# Local fixture source data (kept on this computer, not versioned)
+data/source/
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
