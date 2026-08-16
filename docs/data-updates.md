@@ -15,7 +15,7 @@ of truth; `data/simple_etf.sqlite` is generated and must not be edited by hand.
    `scripts/generate_price_history.py` and run:
 
    ```bash
-   npm run data:generate
+   npm run data:generate -- --seed 42
    ```
 
    This regenerates yearly daily-price files in `prices/`, quarterly valuation
@@ -44,8 +44,8 @@ scripts and code but keep your local CSV data private. Do not commit
 ## Data conventions
 
 - Return fields are percentages, for example `12.50` means 12.50%.
-- `total_return_index` is generated inside SQLite and assumes reinvested
-  illustrative dividends.
+- `total_return_index` is generated during the SQLite rebuild and applies the
+  documented smooth illustrative distribution-yield assumption.
 - Historical price values remain in each ETF's stated currency; do not compare
   their price levels across currencies.
 - All values are illustrative toy data, not investment information.

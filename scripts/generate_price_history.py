@@ -6,6 +6,8 @@ import random
 from datetime import date, timedelta
 from pathlib import Path
 
+from generation import seed_argument
+
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "source"
 OUTPUT = SOURCE / "prices"
@@ -58,11 +60,12 @@ def market_cycle(day: date) -> float:
 
 
 def main() -> None:
+    args = seed_argument(__doc__ or "Generate price history.")
     by_year: dict[int, list[list[str]]] = {}
     for etf in read_etfs():
         annual_return, volatility, base_price, _ = PROFILES[etf["tracking_index"]]
-        currency = etf["currency"]
-        generator = random.Random(f"simple-etf-daily-v2-{etf['symbol']}")
+        currency = etf["trading_currency"]
+        generator = random.Random(f"simple-etf-daily-v3-{args.seed}-{etf['symbol']}")
         price = base_price * (0.82 + generator.random() * 0.36)
         start = date.fromisoformat(etf["inception_date"])
         for current in business_days(start, END_DATE):

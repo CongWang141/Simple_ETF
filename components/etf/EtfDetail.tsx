@@ -35,13 +35,18 @@ export function EtfDetail({ etf, observations, valuations }: { etf: EtfSummary; 
         <div className="section-heading"><p className="section-label">Key Data</p><h2 id="key-data-heading">ETF profile</h2></div>
         <dl>
           <div><dt>Benchmark</dt><dd>{etf.benchmarkName}</dd></div>
+          <div><dt>ISIN</dt><dd>{etf.isin}</dd></div>
+          <div><dt>Index provider</dt><dd>{etf.indexProvider}</dd></div>
           <div><dt>Asset class</dt><dd>{etf.assetClass}</dd></div>
           <div><dt>Region</dt><dd>{etf.region}</dd></div>
           <div><dt>Country</dt><dd>{etf.country}</dd></div>
           <div><dt>Industry</dt><dd>{etf.industry ?? "—"}</dd></div>
           <div><dt>Strategy</dt><dd>{etf.strategy ?? "—"}</dd></div>
           <div><dt>P/B</dt><dd>{etf.pbRatio === null ? "—" : `${etf.pbRatio.toFixed(1)}×`}</dd></div>
-          <div><dt>Currency</dt><dd>{etf.currency}</dd></div>
+          <div><dt>Fund currency</dt><dd>{etf.fundCurrency}</dd></div>
+          <div><dt>Trading currency</dt><dd>{etf.tradingCurrency}</dd></div>
+          <div><dt>Exchange</dt><dd>{etf.exchange}</dd></div>
+          <div><dt>Replication</dt><dd>{etf.replicationMethod}</dd></div>
           <div><dt>Distribution</dt><dd>{etf.distributionPolicy}</dd></div>
           <div><dt>Inception</dt><dd>{etf.inceptionDate}</dd></div>
         </dl>

@@ -14,6 +14,22 @@ export type ComparisonOverlay = {
   message: string;
 };
 
+export function findVerticallyClosestSeries(
+  values: Record<string, number>,
+  cursorY: number,
+  domain: [number, number],
+  plotTop: number,
+  plotBottom: number,
+): string | null {
+  const [minimum, maximum] = domain;
+  if (!Number.isFinite(cursorY) || maximum <= minimum || plotBottom <= plotTop) return null;
+  const scale = (value: number) => plotTop + ((maximum - value) / (maximum - minimum)) * (plotBottom - plotTop);
+  return Object.entries(values)
+    .map(([symbol, value]) => ({ symbol, distance: Math.abs(scale(value) - cursorY) }))
+    .filter((item) => Number.isFinite(item.distance))
+    .sort((left, right) => left.distance - right.distance)[0]?.symbol ?? null;
+}
+
 export function buildComparisonOverlay(symbols: string[], histories: Record<string, ReturnIndexPoint[]>): ComparisonOverlay {
   if (symbols.length < 2) return { data: [], message: "Select at least two ETFs to compare their shared return history." };
   const commonDates = symbols.reduce<string[] | null>((shared, symbol) => {

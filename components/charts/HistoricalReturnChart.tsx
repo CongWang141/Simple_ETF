@@ -63,7 +63,7 @@ export function HistoricalReturnChart({ observations, valuations }: { observatio
         </div>
       </div>
       <div className="chart-area">
-        <ResponsiveContainer height="100%" width="100%">
+        {!chartData.length && (metric === "pe" || metric === "pb") ? <p className="empty-state">{metricDetails[metric].label} is not applicable to this asset class.</p> : <ResponsiveContainer height="100%" width="100%">
           <LineChart data={chartData} margin={{ top: 12, right: 16, bottom: 0, left: 0 }}>
             <XAxis dataKey="date" minTickGap={34} tick={{ fill: "#718096", fontSize: 12 }} tickFormatter={formatDate} tickLine={false} axisLine={false} />
             <YAxis orientation="right" tickFormatter={(value) => metric === "return" ? `${value}%` : metric === "price" ? `${value}` : `${value}×`} tick={{ fill: "#718096", fontSize: 12 }} tickLine={false} axisLine={false} width={58} />
@@ -74,7 +74,7 @@ export function HistoricalReturnChart({ observations, valuations }: { observatio
             />
             <Line dataKey="value" dot={false} stroke={metricDetails[metric].colour} strokeWidth={2.5} type="monotone" />
           </LineChart>
-        </ResponsiveContainer>
+        </ResponsiveContainer>}
       </div>
       <label className="chart-range">
         <span className="range-inputs" onPointerMove={(event) => { if (activeHandle) updateHandle(activeHandle, event.clientX); }} onPointerUp={() => setActiveHandle(null)} ref={rangeRef}>

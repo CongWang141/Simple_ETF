@@ -14,15 +14,13 @@ DATABASE = ROOT / "data" / "simple_etf.sqlite"
 
 SCHEMA = """
 PRAGMA foreign_keys = ON;
-CREATE TABLE etfs (id INTEGER PRIMARY KEY, symbol TEXT NOT NULL UNIQUE, name TEXT NOT NULL, tracking_index TEXT NOT NULL, market TEXT NOT NULL, country TEXT NOT NULL, issuer TEXT NOT NULL, asset_class TEXT NOT NULL, region TEXT NOT NULL, industry TEXT, strategy TEXT, currency TEXT NOT NULL, domicile TEXT NOT NULL, inception_date TEXT NOT NULL, ter REAL NOT NULL, fund_size_million_usd REAL NOT NULL, distribution_policy TEXT NOT NULL, replication_method TEXT NOT NULL, benchmark_name TEXT NOT NULL, assumed_annual_distribution_yield REAL NOT NULL);
+CREATE TABLE etfs (id INTEGER PRIMARY KEY, symbol TEXT NOT NULL UNIQUE, isin TEXT NOT NULL UNIQUE, name TEXT NOT NULL, tracking_index TEXT NOT NULL, index_provider TEXT NOT NULL, market TEXT NOT NULL, exchange TEXT NOT NULL, country TEXT NOT NULL, issuer TEXT NOT NULL, asset_class TEXT NOT NULL CHECK (asset_class IN ('Stock', 'Bond', 'Commodity')), region TEXT NOT NULL, industry TEXT, strategy TEXT, fund_currency TEXT NOT NULL, trading_currency TEXT NOT NULL, domicile TEXT NOT NULL, inception_date TEXT NOT NULL, ter REAL NOT NULL CHECK (ter >= 0), fund_size_million_usd REAL NOT NULL CHECK (fund_size_million_usd >= 0), distribution_policy TEXT NOT NULL, replication_method TEXT NOT NULL, benchmark_name TEXT NOT NULL, assumed_annual_distribution_yield REAL NOT NULL CHECK (assumed_annual_distribution_yield >= 0));
 CREATE TABLE etf_metrics (etf_id INTEGER NOT NULL REFERENCES etfs(id), as_of_date TEXT NOT NULL, pe_ratio REAL, pb_ratio REAL, return_1m_pct REAL NOT NULL, return_3m_pct REAL NOT NULL, return_6m_pct REAL NOT NULL, return_ytd_pct REAL NOT NULL, return_1y_pct REAL NOT NULL, return_3y_pct REAL NOT NULL, return_5y_pct REAL NOT NULL, return_since_inception_pct REAL NOT NULL, PRIMARY KEY (etf_id, as_of_date));
-CREATE TABLE price_history (etf_id INTEGER NOT NULL REFERENCES etfs(id), date TEXT NOT NULL, close_price REAL NOT NULL, currency TEXT NOT NULL, PRIMARY KEY (etf_id, date));
-CREATE TABLE return_history (etf_id INTEGER NOT NULL REFERENCES etfs(id), date TEXT NOT NULL, monthly_price_return_pct REAL NOT NULL, monthly_total_return_pct REAL NOT NULL, total_return_index REAL NOT NULL, cumulative_total_return_pct REAL NOT NULL, PRIMARY KEY (etf_id, date));
-CREATE TABLE valuation_history (etf_id INTEGER NOT NULL REFERENCES etfs(id), date TEXT NOT NULL, pe_ratio REAL NOT NULL, pb_ratio REAL NOT NULL, PRIMARY KEY (etf_id, date));
+CREATE TABLE price_history (etf_id INTEGER NOT NULL REFERENCES etfs(id), date TEXT NOT NULL, close_price REAL NOT NULL CHECK (close_price > 0), currency TEXT NOT NULL, PRIMARY KEY (etf_id, date));
+CREATE TABLE return_history (etf_id INTEGER NOT NULL REFERENCES etfs(id), date TEXT NOT NULL, daily_price_return_pct REAL NOT NULL, daily_total_return_pct REAL NOT NULL, total_return_index REAL NOT NULL CHECK (total_return_index > 0), cumulative_total_return_pct REAL NOT NULL, PRIMARY KEY (etf_id, date));
+CREATE TABLE valuation_snapshots (tracking_index TEXT NOT NULL, report_date TEXT NOT NULL, market_value REAL NOT NULL CHECK (market_value > 0), aggregate_earnings REAL NOT NULL, aggregate_book_value REAL NOT NULL, pe_ratio REAL, pb_ratio REAL, PRIMARY KEY (tracking_index, report_date));
+CREATE TABLE valuation_history (etf_id INTEGER NOT NULL REFERENCES etfs(id), date TEXT NOT NULL, pe_ratio REAL NOT NULL CHECK (pe_ratio > 0), pb_ratio REAL NOT NULL CHECK (pb_ratio > 0), PRIMARY KEY (etf_id, date));
 CREATE INDEX idx_etfs_filters ON etfs (asset_class, region, country, industry, strategy, distribution_policy);
-CREATE INDEX idx_price_history_date ON price_history (etf_id, date);
-CREATE INDEX idx_return_history_date ON return_history (etf_id, date);
-CREATE INDEX idx_valuation_history_date ON valuation_history (etf_id, date);
 """
 
 
@@ -57,9 +55,10 @@ def main() -> None:
             etf_ids: dict[str, int] = {}
             etf_by_symbol = {row["symbol"]: row for row in etfs}
             for row in etfs:
+                fields = ["symbol", "isin", "name", "tracking_index", "index_provider", "market", "exchange", "country", "issuer", "asset_class", "region", "industry", "strategy", "fund_currency", "trading_currency", "domicile", "inception_date", "ter", "fund_size_million_usd", "distribution_policy", "replication_method", "benchmark_name", "assumed_annual_distribution_yield"]
                 cursor = connection.execute(
-                    "INSERT INTO etfs (symbol, name, tracking_index, market, country, issuer, asset_class, region, industry, strategy, currency, domicile, inception_date, ter, fund_size_million_usd, distribution_policy, replication_method, benchmark_name, assumed_annual_distribution_yield) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    tuple((row[field] or None) if field in {"industry", "strategy"} else (float(row[field]) if field in {"ter", "fund_size_million_usd", "assumed_annual_distribution_yield"} else row[field]) for field in ["symbol", "name", "tracking_index", "market", "country", "issuer", "asset_class", "region", "industry", "strategy", "currency", "domicile", "inception_date", "ter", "fund_size_million_usd", "distribution_policy", "replication_method", "benchmark_name", "assumed_annual_distribution_yield"]),
+                    f"INSERT INTO etfs ({', '.join(fields)}) VALUES ({', '.join('?' for _ in fields)})",
+                    tuple((row[field] or None) if field in {"industry", "strategy"} else (float(row[field]) if field in {"ter", "fund_size_million_usd", "assumed_annual_distribution_yield"} else row[field]) for field in fields),
                 )
                 etf_ids[row["symbol"]] = cursor.lastrowid
 
@@ -91,8 +90,9 @@ def main() -> None:
                         snapshot_position += 1
                         snapshot = snapshot_series[snapshot_position]
                         reference_price = snapshot_reference_prices[snapshot_position]
-                        earnings_per_unit = reference_price / float(snapshot["pe_ratio"])
-                        book_value_per_unit = reference_price / float(snapshot["pb_ratio"])
+                        market_value = float(snapshot["market_value"])
+                        earnings_per_unit = reference_price * float(snapshot["aggregate_earnings"]) / market_value
+                        book_value_per_unit = reference_price * float(snapshot["aggregate_book_value"]) / market_value
                     close_price = float(row["close_price"])
                     if row is series[0]:
                         price_return = total_return = 0.0
@@ -109,7 +109,8 @@ def main() -> None:
                     previous_price, previous_date = close_price, row_date
 
             connection.executemany("INSERT INTO price_history (etf_id, date, close_price, currency) VALUES (?, ?, ?, ?)", [(etf_ids[row["symbol"]], row["date"], float(row["close_price"]), row["currency"]) for row in prices])
-            connection.executemany("INSERT INTO return_history (etf_id, date, monthly_price_return_pct, monthly_total_return_pct, total_return_index, cumulative_total_return_pct) VALUES (?, ?, ?, ?, ?, ?)", return_rows)
+            connection.executemany("INSERT INTO return_history (etf_id, date, daily_price_return_pct, daily_total_return_pct, total_return_index, cumulative_total_return_pct) VALUES (?, ?, ?, ?, ?, ?)", return_rows)
+            connection.executemany("INSERT INTO valuation_snapshots (tracking_index, report_date, market_value, aggregate_earnings, aggregate_book_value, pe_ratio, pb_ratio) VALUES (?, ?, ?, ?, ?, ?, ?)", [(row["tracking_index"], row["report_date"], float(row["market_value"]), float(row["aggregate_earnings"]), float(row["aggregate_book_value"]), float(row["pe_ratio"]), float(row["pb_ratio"])) for values in snapshots.values() for row in values])
             connection.executemany("INSERT INTO valuation_history (etf_id, date, pe_ratio, pb_ratio) VALUES (?, ?, ?, ?)", valuation_rows)
             for symbol, row in metrics.items():
                 pe_ratio, pb_ratio = valuation_at_date.get((symbol, row["as_of_date"]), (None, None))

@@ -1,31 +1,37 @@
 # Simple ETF
 
-A local-only prototype for a simplified ETF screener. It will use Next.js and
-TypeScript for the interface, SQLite for local data, and Python to build the
-sample database.
+Simple ETF is a deliberately small, local-only ETF screener for UI and data-pipeline development. Every fund, identifier, price, return, and valuation is fictional; nothing is investment information.
 
-## Planned layout
+## Features and stack
 
-- `app/` — Next.js routes: screener, ETF detail, and comparison.
-- `components/` — feature-specific and shared interface pieces.
-- `lib/` — database access, domain queries, calculations, and shared types.
-- `data/source/` — version-controlled local CSV fixtures.
-- `data/simple_etf.sqlite` — generated local database (ignored by Git).
-- `scripts/` — database seeding/import utilities.
-- `tests/` — query, calculation, and interface tests.
-- `docs/` — schema notes and lightweight architecture decisions.
-- `public/` — optional static assets.
+- Next.js 16, React 19, strict TypeScript, local read-only SQLite, and deterministic Python
+- screener filters/sorting, detail and comparison pages
+- daily price, cumulative-return, P/E, and P/B charts
 
-## Local setup
+## Setup
 
-1. Run `npm install`.
-2. Run `npm run db:seed` to create the local SQLite database from the fixture CSVs.
-3. Run `npm run db:check` to verify the generated database.
-4. Run `npm run dev` and open the local URL shown in the terminal.
+```bash
+npm install
+npm run data:generate -- --seed 42
+npm run db:seed
+npm run db:check
+npm run dev
+```
 
-Phase 1 provides local fixture CSVs, a reproducible SQLite seeder, and typed
-read-only queries. The screener interface begins in Phase 2.
+The default seed is `42`. Useful checks are `npm run db:check`, `npm test`, `npm run test:db`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`. `npm run data:reproducibility -- --seed 42` performs two complete generations/rebuilds and compares every generated CSV byte plus a canonical logical SQLite dump.
 
-For the fixture-data refresh workflow, see [data updates](docs/data-updates.md).
-For the automated checks and a short keyboard/layout review, see the
-[quality checklist](docs/quality-checklist.md).
+## Structure
+
+- `app/`: server routes
+- `components/`: feature UI
+- `lib/`: server database access, types, and calculations
+- `scripts/`: generation, rebuild, and validation
+- `data/source/`: generated local CSVs
+- `data/simple_etf.sqlite`: generated local database
+- `tests/` and `docs/`: checks and project documentation
+
+See [architecture](docs/architecture.md), [data pipeline](docs/data-pipeline.md), [data model](docs/data-model.md), [development guide](docs/development-guide.md), [project specification](docs/project-spec.md), and the [reproducibility checklist](docs/reproducibility-checklist.md).
+
+## Limitations and non-goals
+
+Weekdays are not exchange-holiday calendars; currencies are not converted; distributions use a smooth annual assumption; valuations are ETF/index-level rather than holdings-level. Authentication, payments, deployment, cloud services, Docker, external APIs, real/real-time data, SEO, analytics, and licensing systems are intentionally out of scope.

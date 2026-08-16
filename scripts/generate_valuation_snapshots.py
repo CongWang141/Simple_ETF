@@ -6,6 +6,8 @@ import random
 from datetime import date
 from pathlib import Path
 
+from generation import seed_argument
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "source" / "fundamentals" / "index_valuation_snapshots.csv"
 
@@ -26,19 +28,25 @@ def quarter_end(year: int, month: int) -> date:
 
 
 def main() -> None:
+    args = seed_argument(__doc__ or "Generate valuation fundamentals.")
     rows: list[list[str]] = []
     for index, (base_pe, base_pb) in VALUATION_ANCHORS.items():
-        generator = random.Random(f"simple-etf-valuations-v2-{index}")
+        generator = random.Random(f"simple-etf-valuations-v3-{args.seed}-{index}")
         quarters = [(2009, 12)] + [(year, month) for year in range(2010, 2026) for month in (3, 6, 9, 12)]
         for position, (year, month) in enumerate(quarters):
             cycle = math.sin(position * 0.42) * 0.075 + math.cos(position * 0.16) * 0.035
-            pe = base_pe * (1 + cycle + generator.uniform(-0.035, 0.035))
-            pb = base_pb * (1 + cycle * 0.7 + generator.uniform(-0.03, 0.03))
-            rows.append([index, quarter_end(year, month).isoformat(), f"{max(4, pe):.2f}", f"{max(0.35, pb):.2f}"])
+            market_value = 1_000_000_000 * (1 + position * 0.012) * (1 + cycle)
+            pe_target = max(4, base_pe * (1 + generator.uniform(-0.035, 0.035)))
+            pb_target = max(0.35, base_pb * (1 + generator.uniform(-0.03, 0.03)))
+            earnings = market_value / pe_target
+            book_value = market_value / pb_target
+            pe = market_value / earnings
+            pb = market_value / book_value
+            rows.append([index, quarter_end(year, month).isoformat(), f"{market_value:.2f}", f"{earnings:.2f}", f"{book_value:.2f}", f"{pe:.6f}", f"{pb:.6f}"])
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT.open("w", newline="", encoding="utf-8") as output_file:
         writer = csv.writer(output_file)
-        writer.writerow(["tracking_index", "report_date", "pe_ratio", "pb_ratio"])
+        writer.writerow(["tracking_index", "report_date", "market_value", "aggregate_earnings", "aggregate_book_value", "pe_ratio", "pb_ratio"])
         writer.writerows(rows)
     print(f"Generated {len(rows)} quarterly valuation snapshots.")
 

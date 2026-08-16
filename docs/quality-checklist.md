@@ -25,10 +25,10 @@ a visible amber `:focus-visible` outline.
 Before each handoff, run `npm run dev` locally and make this short review:
 
 1. On `/`, Tab through each filter, reset button, sort controls, and ETF links.
-2. On `/etfs/USST01`, Tab to the period buttons and activate one with Enter or
-   Space.
-3. On `/compare`, Tab through the ETF checkboxes; select two ETFs, then remove
-   one to confirm the comparison guidance appears.
+2. On `/etfs/USST01`, select each chart measure and move both range handles
+   with pointer and arrow keys.
+3. From the screener select two ETFs and open `/compare`; verify the tooltip
+   highlights the vertically closest line and names the ETF before its value.
 4. Narrow the browser window below 900px and 480px. Filter controls and
    comparison cards should stack; wide tables retain horizontal scrolling rather
    than hiding data.

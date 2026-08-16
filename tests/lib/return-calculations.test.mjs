@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { loadTypeScriptModule } from "../helpers/load-typescript.mjs";
 
-const { buildComparisonOverlay, normalizeReturnIndex } = await loadTypeScriptModule("lib/return-calculations.ts");
+const { buildComparisonOverlay, findVerticallyClosestSeries, normalizeReturnIndex } = await loadTypeScriptModule("lib/return-calculations.ts");
 
 test("normalizes a total-return index to the selected starting value", () => {
   assert.deepEqual(normalizeReturnIndex([
@@ -35,4 +35,12 @@ test("explains comparison edge cases", () => {
     A: [{ date: "2024-01-31", totalReturnIndex: 100 }],
     B: [{ date: "2024-02-29", totalReturnIndex: 100 }],
   }).message, /no overlapping history/);
+});
+
+test("selects a comparison series by vertical distance only", () => {
+  const values = { LOW: 10, MIDDLE: 50, HIGH: 90 };
+  assert.equal(findVerticallyClosestSeries(values, 48, [0, 100], 0, 100), "MIDDLE");
+  assert.equal(findVerticallyClosestSeries(values, 12, [0, 100], 0, 100), "HIGH");
+  assert.equal(findVerticallyClosestSeries(values, 88, [0, 100], 0, 100), "LOW");
+  assert.equal(findVerticallyClosestSeries(values, 50, [1, 1], 0, 100), null);
 });

@@ -4,6 +4,8 @@ import csv
 from datetime import date
 from pathlib import Path
 
+from generation import seed_argument
+
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "data" / "source" / "etfs.csv"
 
@@ -20,7 +22,7 @@ COUNTRIES = [
 ]
 INDUSTRIES = ["Energy", "Materials", "Industrials", "Consumer Discretionary", "Consumer Staples", "Health Care", "Financials", "Information Technology", "Communication Services", "Utilities"]
 STRATEGIES = ["Passive index tracking", "Growth", "Blue chip", "Momentum", "Dividends", "Quality", "Big cap", "Small cap"]
-FIELDS = ["symbol", "name", "tracking_index", "market", "country", "issuer", "asset_class", "region", "industry", "strategy", "currency", "domicile", "inception_date", "ter", "fund_size_million_usd", "distribution_policy", "replication_method", "benchmark_name", "assumed_annual_distribution_yield"]
+FIELDS = ["symbol", "isin", "name", "tracking_index", "index_provider", "market", "exchange", "country", "issuer", "asset_class", "region", "industry", "strategy", "fund_currency", "trading_currency", "domicile", "inception_date", "ter", "fund_size_million_usd", "distribution_policy", "replication_method", "benchmark_name", "assumed_annual_distribution_yield"]
 
 
 def inception(position: int) -> str:
@@ -28,6 +30,7 @@ def inception(position: int) -> str:
 
 
 def main() -> None:
+    seed_argument(__doc__ or "Generate ETF metadata.")
     rows: list[dict[str, str]] = []
     position = 0
     stock_position = 0
@@ -38,9 +41,9 @@ def main() -> None:
             strategy = STRATEGIES[stock_position % len(STRATEGIES)]
             tracking_index = indexes[(number - 1) % len(indexes)]
             rows.append({
-                "symbol": f"{code}ST{number:02}", "name": f"{country} {industry} {strategy} ETF", "tracking_index": tracking_index,
-                "market": country, "country": country, "issuer": f"{country} Local Index Funds", "asset_class": "Stock", "region": region,
-                "industry": industry, "strategy": strategy, "currency": currency, "domicile": domicile, "inception_date": inception(position),
+                "symbol": f"{code}ST{number:02}", "isin": f"XF{position + 1:010d}", "name": f"{country} {industry} {strategy} ETF", "tracking_index": tracking_index,
+                "index_provider": tracking_index.split()[0], "market": country, "exchange": f"{country} Local Exchange", "country": country, "issuer": f"{country} Local Index Funds", "asset_class": "Stock", "region": region,
+                "industry": industry, "strategy": strategy, "fund_currency": currency, "trading_currency": currency, "domicile": domicile, "inception_date": inception(position),
                 "ter": f"{0.10 + (position % 7) * 0.04:.2f}", "fund_size_million_usd": str(450 + position * 47),
                 "distribution_policy": "Accumulative" if position % 2 == 0 else "Distributive", "replication_method": "Physical",
                 "benchmark_name": f"{tracking_index} Index", "assumed_annual_distribution_yield": f"{0.010 + (position % 5) * 0.004:.4f}",
@@ -49,9 +52,9 @@ def main() -> None:
             stock_position += 1
         for asset_class, tracking_index, suffix in (("Bond", "Government Bond", "Government Bond"), ("Commodity", "Broad Commodity", "Broad Commodity")):
             rows.append({
-                "symbol": f"{code}{'BD' if asset_class == 'Bond' else 'CM'}01", "name": f"{country} {suffix} ETF", "tracking_index": tracking_index,
-                "market": country, "country": country, "issuer": f"{country} Local Index Funds", "asset_class": asset_class, "region": region,
-                "industry": "", "strategy": "", "currency": currency, "domicile": domicile, "inception_date": inception(position),
+                "symbol": f"{code}{'BD' if asset_class == 'Bond' else 'CM'}01", "isin": f"XF{position + 1:010d}", "name": f"{country} {suffix} ETF", "tracking_index": tracking_index,
+                "index_provider": "Synthetic Local", "market": country, "exchange": f"{country} Local Exchange", "country": country, "issuer": f"{country} Local Index Funds", "asset_class": asset_class, "region": region,
+                "industry": "", "strategy": "", "fund_currency": currency, "trading_currency": currency, "domicile": domicile, "inception_date": inception(position),
                 "ter": f"{0.15 + (position % 6) * 0.04:.2f}", "fund_size_million_usd": str(300 + position * 31),
                 "distribution_policy": "Accumulative" if position % 2 == 0 else "Distributive", "replication_method": "Physical",
                 "benchmark_name": f"{country} {suffix} Index", "assumed_annual_distribution_yield": "0.0180" if asset_class == "Bond" else "0.0000",

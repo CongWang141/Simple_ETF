@@ -4,6 +4,8 @@ import csv
 from datetime import date
 from pathlib import Path
 
+from generation import seed_argument
+
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "data" / "source"
 
@@ -25,6 +27,7 @@ def value_on_or_before(values: list[tuple[date, float]], target: date) -> float:
 
 
 def main() -> None:
+    seed_argument(__doc__ or "Generate latest metrics.")
     etfs = {row["symbol"]: row for row in read_csv(SOURCE / "etfs.csv")}
     prices = [row for path in sorted((SOURCE / "prices").glob("*.csv")) for row in read_csv(path)]
     by_symbol: dict[str, list[dict[str, str]]] = {}

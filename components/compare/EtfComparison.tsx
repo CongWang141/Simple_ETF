@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { Bar, BarChart, Cell, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { buildComparisonOverlay } from "@/lib/return-calculations";
+import { buildComparisonOverlay, findVerticallyClosestSeries } from "@/lib/return-calculations";
 import type { EtfSummary, HistoricalObservation, HistoricalValuationObservation } from "@/lib/types";
 
 type NumericMetricKey = "peRatio" | "ter" | "fundSizeMillionUsd" | "return1mPct" | "returnYtdPct" | "return1yPct" | "return3yPct" | "return5yPct";
@@ -137,15 +137,10 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
     const cursorY = state.activeCoordinate?.y;
     const chartHeight = chartRef.current?.clientHeight;
     if (!Number.isInteger(index) || cursorY === undefined || !chartHeight || !visibleRows[index]) return;
-    const [minimum, maximum] = comparisonYDomain;
     const plotTop = 12;
     const plotBottom = chartHeight - 32;
-    const scale = (value: number) => plotTop + ((maximum - value) / (maximum - minimum)) * (plotBottom - plotTop);
-    const closest = selectedSymbols
-      .map((symbol) => ({ symbol, distance: Math.abs(scale(Number(visibleRows[index][symbol])) - cursorY) }))
-      .filter((item) => Number.isFinite(item.distance))
-      .sort((left, right) => left.distance - right.distance)[0]?.symbol;
-    setHoveredSymbol(closest ?? null);
+    const values = Object.fromEntries(selectedSymbols.map((symbol) => [symbol, Number(visibleRows[index][symbol])]));
+    setHoveredSymbol(findVerticallyClosestSeries(values, cursorY, comparisonYDomain, plotTop, plotBottom));
   };
 
   return (
