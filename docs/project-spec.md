@@ -1,6 +1,6 @@
 # Authoritative project specification
 
-Simple ETF is a local-only fictional screener for one developer. It retains screening/sorting, detail and comparison pages, daily price/cumulative-return/P/E/P/B charts, synthetic data, and SQLite.
+Simple ETF is a local-only fictional screener for one developer. It retains screening/sorting, detail and comparison pages, daily price, cumulative-return, P/E, P/B charts, synthetic data, and SQLite.
 
 The required architecture is deterministic Python → CSV → reproducible SQLite → server-only queries → Next.js/React. Seed 42 is default. Stock ratios derive from synthetic market value, earnings, and book value; Bond/Commodity ratios are null. Daily ratios keep per-unit fundamentals constant between quarterly reports while price moves. Total return includes the documented smooth distribution assumption.
 

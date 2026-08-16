@@ -1,14 +1,15 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { normalizeReturnIndex } from "@/lib/return-calculations";
+import { getCalendarDateTicks, getNiceNumericAxis } from "@/lib/chart-axis";
 import type { HistoricalObservation, HistoricalValuationObservation } from "@/lib/types";
 
 type ChartMetric = "return" | "price" | "pe" | "pb";
 
 function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", year: "2-digit" }).format(new Date(`${date}T00:00:00`));
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "2-digit" }).format(new Date(`${date}T00:00:00Z`)).replaceAll(" ", "-");
 }
 
 const metricDetails: Record<ChartMetric, { label: string; title: string; colour: string }> = {
@@ -37,6 +38,8 @@ export function HistoricalReturnChart({ observations, valuations }: { observatio
   }, [endIndex, metric, observations, startIndex, valuations]);
 
   const currency = observations.at(-1)?.currency ?? "";
+  const numericAxis = useMemo(() => getNiceNumericAxis(chartData.map((point) => point.value)), [chartData]);
+  const dateTicks = useMemo(() => getCalendarDateTicks(chartData.map((point) => point.date)), [chartData]);
   const valueFormatter = (value: number) => {
     if (metric === "return") return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
     if (metric === "price") return `${value.toFixed(2)} ${currency}`;
@@ -59,14 +62,14 @@ export function HistoricalReturnChart({ observations, valuations }: { observatio
               {(Object.keys(metricDetails) as ChartMetric[]).map((option) => <option key={option} value={option}>{metricDetails[option].label}</option>)}
             </select>
           </label>
-          <span className="chart-legend"><i style={{ background: metricDetails[metric].colour }} />{metricDetails[metric].label}</span>
         </div>
       </div>
       <div className="chart-area">
         {!chartData.length && (metric === "pe" || metric === "pb") ? <p className="empty-state">{metricDetails[metric].label} is not applicable to this asset class.</p> : <ResponsiveContainer height="100%" width="100%">
-          <LineChart data={chartData} margin={{ top: 12, right: 16, bottom: 0, left: 0 }}>
-            <XAxis dataKey="date" minTickGap={34} tick={{ fill: "#718096", fontSize: 12 }} tickFormatter={formatDate} tickLine={false} axisLine={false} />
-            <YAxis orientation="right" tickFormatter={(value) => metric === "return" ? `${value}%` : metric === "price" ? `${value}` : `${value}×`} tick={{ fill: "#718096", fontSize: 12 }} tickLine={false} axisLine={false} width={58} />
+          <LineChart data={chartData} margin={{ top: 12, right: 12, bottom: 16, left: 12 }}>
+            <CartesianGrid stroke="#e9eef2" strokeDasharray="2 3" vertical />
+            <XAxis axisLine={{ stroke: "#9aa8b6", strokeWidth: 1 }} dataKey="date" dy={8} interval="preserveStartEnd" minTickGap={12} tick={{ fill: "#718096", fontSize: 12 }} tickFormatter={formatDate} tickLine={false} ticks={dateTicks} />
+            <YAxis axisLine={{ stroke: "#9aa8b6", strokeWidth: 1 }} domain={numericAxis.domain} ticks={numericAxis.ticks} tickFormatter={(value) => metric === "return" ? `${Number(value).toFixed(2)}%` : metric === "price" ? Number(value).toFixed(2) : `${Number(value).toFixed(2)}×`} tick={{ fill: "#718096", fontSize: 12 }} tickLine={false} width={68} />
             <Tooltip
               contentStyle={{ border: "1px solid #dce4dc", borderRadius: "8px", boxShadow: "0 8px 20px rgba(23,32,51,.10)" }}
               formatter={(value) => [valueFormatter(Number(value)), metricDetails[metric].title]}
@@ -79,8 +82,6 @@ export function HistoricalReturnChart({ observations, valuations }: { observatio
       <label className="chart-range">
         <span className="range-inputs" onPointerMove={(event) => { if (activeHandle) updateHandle(activeHandle, event.clientX); }} onPointerUp={() => setActiveHandle(null)} ref={rangeRef}>
           <span className="range-selection" style={{ left: `${(startIndex / Math.max(1, observations.length - 1)) * 100}%`, width: `${((endIndex - startIndex) / Math.max(1, observations.length - 1)) * 100}%` }} />
-          <span className="range-bound-label range-bound-start" style={{ left: `${(startIndex / Math.max(1, observations.length - 1)) * 100}%` }}>Start</span>
-          <span className="range-bound-label range-bound-end" style={{ left: `${(endIndex / Math.max(1, observations.length - 1)) * 100}%` }}>End</span>
           {activeHandle === "start" && <span className="range-date-tooltip" style={{ left: `${(startIndex / Math.max(1, observations.length - 1)) * 100}%` }}>{observations[startIndex]?.date}</span>}
           {activeHandle === "end" && <span className="range-date-tooltip" style={{ left: `${(endIndex / Math.max(1, observations.length - 1)) * 100}%` }}>{observations[endIndex]?.date}</span>}
           <button aria-label="Start date" className="range-handle range-handle-start" onKeyDown={(event) => { const amount = event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0; if (amount) { event.preventDefault(); setStartIndex((value) => Math.max(0, Math.min(value + amount, endIndex - minimumRange + 1))); } }} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); setActiveHandle("start"); }} style={{ left: `${(startIndex / Math.max(1, observations.length - 1)) * 100}%` }} type="button"><span aria-hidden="true">↔</span></button>

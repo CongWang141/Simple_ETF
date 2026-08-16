@@ -17,7 +17,6 @@ export function EtfDetail({ etf, observations, valuations }: { etf: EtfSummary; 
         <div>
           <p className="eyebrow">{etf.symbol} · {etf.market}</p>
           <h1>{etf.name}</h1>
-          <p className="detail-index">Tracks the {etf.trackingIndex}</p>
         </div>
       </header>
 
@@ -32,7 +31,7 @@ export function EtfDetail({ etf, observations, valuations }: { etf: EtfSummary; 
       <HistoricalReturnChart observations={observations} valuations={valuations} />
 
       <section className="facts-card key-data-card" aria-labelledby="key-data-heading">
-        <div className="section-heading"><p className="section-label">Key Data</p><h2 id="key-data-heading">ETF profile</h2></div>
+        <div className="section-heading"><h2 id="key-data-heading">Key Data</h2><p className="section-subtitle">ETF profile</p></div>
         <dl>
           <div><dt>Benchmark</dt><dd>{etf.benchmarkName}</dd></div>
           <div><dt>ISIN</dt><dd>{etf.isin}</dd></div>
@@ -54,7 +53,7 @@ export function EtfDetail({ etf, observations, valuations }: { etf: EtfSummary; 
 
       <section className="performance-card">
         <div className="performance-heading">
-          <div><p className="section-label">Performance snapshot</p><h2>Total return</h2></div>
+          <div><h2>Performance snapshot</h2><p className="section-subtitle">Cumulative return</p></div>
           <span>As of {etf.asOfDate}</span>
         </div>
         <div className="performance-grid">

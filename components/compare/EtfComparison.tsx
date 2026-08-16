@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import { Bar, BarChart, Cell, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { buildComparisonOverlay, findVerticallyClosestSeries } from "@/lib/return-calculations";
+import { getCalendarDateTicks, getNiceNumericAxis } from "@/lib/chart-axis";
 import type { EtfSummary, HistoricalObservation, HistoricalValuationObservation } from "@/lib/types";
 
 type NumericMetricKey = "peRatio" | "ter" | "fundSizeMillionUsd" | "return1mPct" | "returnYtdPct" | "return1yPct" | "return3yPct" | "return5yPct";
@@ -14,11 +15,11 @@ const metrics: ComparisonMetric[] = [
   { key: "peRatio", title: "P/E", suffix: "×" },
   { key: "ter", title: "TER", suffix: "%" },
   { key: "fundSizeMillionUsd", title: "Fund size", suffix: "m USD" },
-  { key: "return1mPct", title: "1M return", suffix: "%", isReturn: true },
-  { key: "returnYtdPct", title: "YTD return", suffix: "%", isReturn: true },
-  { key: "return1yPct", title: "1Y return", suffix: "%", isReturn: true },
-  { key: "return3yPct", title: "3Y return", suffix: "%", isReturn: true },
-  { key: "return5yPct", title: "5Y return", suffix: "%", isReturn: true },
+  { key: "return1mPct", title: "1M Return", suffix: "%", isReturn: true },
+  { key: "returnYtdPct", title: "YTD Return", suffix: "%", isReturn: true },
+  { key: "return1yPct", title: "1Y Return", suffix: "%", isReturn: true },
+  { key: "return3yPct", title: "3Y Return", suffix: "%", isReturn: true },
+  { key: "return5yPct", title: "5Y Return", suffix: "%", isReturn: true },
 ];
 
 const lineColors = ["#197047", "#2463b7", "#b95a15", "#8d3ca6", "#b23b46", "#0f7e91", "#6c6214", "#7b4c37"];
@@ -30,7 +31,25 @@ const chartDetails: Record<ChartMetric, { label: string; colour: string }> = {
 };
 
 function formatChartDate(date: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", year: "2-digit" }).format(new Date(`${date}T00:00:00`));
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "2-digit" }).format(new Date(`${date}T00:00:00Z`)).replaceAll(" ", "-");
+}
+
+function formatCurrentDate() {
+  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date()).replaceAll(" ", "-");
+}
+
+function formatCompactInteger(value: number) {
+  const rounded = Math.round(value);
+  if (Math.abs(rounded) >= 1_000_000) return `${Math.round(rounded / 1_000_000)}M`;
+  if (Math.abs(rounded) >= 1_000) return `${Math.round(rounded / 1_000)}K`;
+  return String(rounded);
+}
+
+function formatSmallTick(value: number, metric: ComparisonMetric, step: number) {
+  if (metric.key === "fundSizeMillionUsd") return Math.abs(value) >= 1_000 ? `$${(value / 1_000).toFixed(step < 1_000 ? 1 : 0)}B` : `$${Math.round(value)}M`;
+  if (metric.key === "ter") return value.toFixed(2);
+  if (metric.key === "peRatio") return `${value.toFixed(2)}×`;
+  return formatCompactInteger(value);
 }
 
 type ComparisonTooltipProps = {
@@ -72,16 +91,19 @@ function buildMetricOverlay(symbols: string[], histories: Record<string, Histori
 
 function SmallMetricChart({ etfs, metric }: { etfs: EtfSummary[]; metric: ComparisonMetric }) {
   const data = etfs.flatMap((etf) => etf[metric.key] === null ? [] : [{ symbol: etf.symbol, value: etf[metric.key] }]);
+  const numericAxis = metric.key === "ter"
+    ? getNiceNumericAxis([0, 1], 6)
+    : getNiceNumericAxis(data.map((entry) => Number(entry.value)), 4);
   return (
     <section className="mini-chart-card">
-      <h2>{metric.title}</h2>
+      <h2>{metric.title === "Fund size" ? "Fund Size" : metric.title}</h2>
       <div className="mini-chart">
         {!data.length ? <p className="empty-state">Not applicable to this asset class.</p> : <ResponsiveContainer height="100%" width="100%">
-          <BarChart data={data} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
-            <XAxis dataKey="symbol" tick={{ fill: "#6c7888", fontSize: 10 }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fill: "#6c7888", fontSize: 10 }} tickLine={false} axisLine={false} width={35} />
+          <BarChart data={data} margin={{ top: 8, right: 4, left: 12, bottom: 0 }}>
+            <XAxis axisLine={{ stroke: "#9aa8b6", strokeWidth: 1 }} dataKey="symbol" tick={{ fill: "#6c7888", fontSize: 10 }} tickLine={false} />
+            <YAxis domain={numericAxis.domain} ticks={numericAxis.ticks} tickFormatter={(value) => formatSmallTick(Number(value), metric, numericAxis.step)} tick={{ fill: "#6c7888", fontSize: 10 }} tickLine={false} width={54} />
             {metric.isReturn && <ReferenceLine stroke="#b9c6bc" y={0} />}
-            <Tooltip formatter={(value) => [`${Number(value).toFixed(2)} ${metric.suffix}`, metric.title]} />
+            <Tooltip allowEscapeViewBox={{ x: false, y: false }} contentStyle={{ border: "1px solid #dce4dc", borderRadius: "8px", boxShadow: "0 8px 20px rgba(23,32,51,.10)" }} cursor={false} formatter={(value) => [`${Number(value).toFixed(2)} ${metric.suffix}`, metric.title]} />
             <Bar dataKey="value" maxBarSize={32} radius={[3, 3, 0, 0]}>
               {data.map((entry) => <Cell fill={metric.isReturn ? Number(entry.value) >= 0 ? "#197047" : "#b23b46" : "#2463b7"} key={entry.symbol} />)}
             </Bar>
@@ -117,14 +139,9 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
   const safeEndIndex = Math.min(endIndex, Math.max(0, overlay.data.length - 1));
   const visibleOverlay = overlay.data.slice(startIndex, safeEndIndex + 1);
   const visibleRows = visibleOverlay as Array<Record<string, string | number>>;
-  const comparisonYDomain = useMemo((): [number, number] => {
-    const values = visibleRows.flatMap((row) => selectedSymbols.map((symbol) => Number(row[symbol])).filter(Number.isFinite));
-    if (!values.length) return [0, 1];
-    const low = Math.min(...values);
-    const high = Math.max(...values);
-    const padding = (high - low || Math.max(1, Math.abs(high) * 0.1)) * 0.06;
-    return [low - padding, high + padding];
-  }, [selectedSymbols, visibleRows]);
+  const comparisonAxis = useMemo(() => getNiceNumericAxis(visibleRows.flatMap((row) => selectedSymbols.map((symbol) => Number(row[symbol])).filter(Number.isFinite))), [selectedSymbols, visibleRows]);
+  const comparisonYDomain = comparisonAxis.domain;
+  const comparisonDateTicks = useMemo(() => getCalendarDateTicks(visibleRows.map((row) => String(row.date))), [visibleRows]);
   const updateHandle = (handle: "start" | "end", clientX: number) => {
     const bounds = rangeRef.current?.getBoundingClientRect();
     if (!bounds) return;
@@ -147,8 +164,8 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
     <main className="page-shell comparison-page" id="main-content">
       <Link className="back-link" href="/">← Back to screener</Link>
       <header className="comparison-heading">
-        <div><p className="eyebrow">ETF comparison</p><h1>Compare your short list.</h1></div>
-        <p>Showing the ETFs selected on the screener. Returns are total returns, as of 31 Dec 2025.</p>
+        <h1>Compare your short list</h1>
+        <p>Showing the ETFs selected on the screener. Comparison based on the data as of {formatCurrentDate()}.</p>
       </header>
 
       {selectedEtfs.length < 2 ? <EmptyComparison /> : <>
@@ -162,15 +179,13 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
                 {(Object.keys(chartDetails) as ChartMetric[]).map((option) => <option key={option} value={option}>{chartDetails[option].label}</option>)}
               </select>
             </label>
-            <div className="comparison-chart-legend" aria-label="ETF legend">
-              {selectedEtfs.map((etf, index) => <span key={etf.symbol}><i style={{ background: lineColors[index] }} />{etf.symbol}</span>)}
-            </div>
           </div></div>
           {overlay.data.length ? <><div className="comparison-line-chart" ref={chartRef}>
             <ResponsiveContainer height="100%" width="100%">
-              <LineChart data={visibleOverlay} margin={{ top: 12, right: 16, bottom: 0, left: 0 }} onMouseLeave={() => setHoveredSymbol(null)} onMouseMove={selectVerticallyClosest}>
-                <XAxis dataKey="date" minTickGap={34} tick={{ fill: "#718096", fontSize: 12 }} tickFormatter={formatChartDate} tickLine={false} axisLine={false} />
-                <YAxis domain={comparisonYDomain} orientation="right" tickFormatter={(value) => chartMetric === "return" ? `${value}%` : chartMetric === "price" ? `${value}` : `${value}×`} tick={{ fill: "#718096", fontSize: 12 }} tickLine={false} axisLine={false} width={54} />
+              <LineChart data={visibleOverlay} margin={{ top: 12, right: 12, bottom: 16, left: 12 }} onMouseLeave={() => setHoveredSymbol(null)} onMouseMove={selectVerticallyClosest}>
+                <CartesianGrid stroke="#e9eef2" strokeDasharray="2 3" vertical />
+                <XAxis axisLine={{ stroke: "#9aa8b6", strokeWidth: 1 }} dataKey="date" dy={8} interval="preserveStartEnd" minTickGap={12} tick={{ fill: "#718096", fontSize: 12 }} tickFormatter={formatChartDate} tickLine={false} ticks={comparisonDateTicks} />
+                <YAxis axisLine={{ stroke: "#9aa8b6", strokeWidth: 1 }} domain={comparisonYDomain} ticks={comparisonAxis.ticks} tickFormatter={(value) => chartMetric === "return" ? `${Number(value).toFixed(2)}%` : chartMetric === "price" ? Number(value).toFixed(2) : `${Number(value).toFixed(2)}×`} tick={{ fill: "#718096", fontSize: 12 }} tickLine={false} width={68} />
                 <Tooltip content={<ComparisonTooltip etfs={selectedEtfs} metric={chartMetric} symbol={hoveredSymbol} />} />
                 {selectedEtfs.map((etf, index) => <Line activeDot={{ r: 5 }} dataKey={etf.symbol} dot={false} key={etf.symbol} opacity={!hoveredSymbol || hoveredSymbol === etf.symbol ? 1 : 0.65} stroke={hoveredSymbol && hoveredSymbol !== etf.symbol ? "#aeb8c2" : lineColors[index]} strokeWidth={hoveredSymbol === etf.symbol ? 3.5 : 2.3} type="monotone" />)}
               </LineChart>
@@ -179,8 +194,6 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
           <label className="chart-range comparison-range">
             <span className="range-inputs" onPointerMove={(event) => { if (activeHandle) updateHandle(activeHandle, event.clientX); }} onPointerUp={() => setActiveHandle(null)} ref={rangeRef}>
               <span className="range-selection" style={{ left: `${(startIndex / Math.max(1, overlay.data.length - 1)) * 100}%`, width: `${((safeEndIndex - startIndex) / Math.max(1, overlay.data.length - 1)) * 100}%` }} />
-              <span className="range-bound-label range-bound-start" style={{ left: `${(startIndex / Math.max(1, overlay.data.length - 1)) * 100}%` }}>Start</span>
-              <span className="range-bound-label range-bound-end" style={{ left: `${(safeEndIndex / Math.max(1, overlay.data.length - 1)) * 100}%` }}>End</span>
               {activeHandle === "start" && <span className="range-date-tooltip" style={{ left: `${(startIndex / Math.max(1, overlay.data.length - 1)) * 100}%` }}>{String(overlayRows[startIndex]?.date ?? "")}</span>}
               {activeHandle === "end" && <span className="range-date-tooltip" style={{ left: `${(safeEndIndex / Math.max(1, overlay.data.length - 1)) * 100}%` }}>{String(overlayRows[safeEndIndex]?.date ?? "")}</span>}
               <button aria-label="Comparison start date" className="range-handle range-handle-start" onKeyDown={(event) => { const amount = event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1 : 0; if (amount) { event.preventDefault(); setStartIndex((value) => Math.max(0, Math.min(value + amount, safeEndIndex - minimumRange + 1))); } }} onPointerDown={(event) => { event.currentTarget.setPointerCapture(event.pointerId); setActiveHandle("start"); }} style={{ left: `${(startIndex / Math.max(1, overlay.data.length - 1)) * 100}%` }} type="button"><span aria-hidden="true">↔</span></button>
