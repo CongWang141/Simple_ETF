@@ -21,7 +21,7 @@ const metricDetails: Record<ChartMetric, { label: string; title: string; colour:
 
 export function HistoricalReturnChart({ observations, valuations }: { observations: HistoricalObservation[]; valuations: HistoricalValuationObservation[] }) {
   const minimumRange = Math.min(20, observations.length);
-  const [startIndex, setStartIndex] = useState(Math.max(0, observations.length - Math.min(1260, observations.length)));
+  const [startIndex, setStartIndex] = useState(0);
   const [endIndex, setEndIndex] = useState(Math.max(0, observations.length - 1));
   const [activeHandle, setActiveHandle] = useState<"start" | "end" | null>(null);
   const rangeRef = useRef<HTMLSpanElement>(null);

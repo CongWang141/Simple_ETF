@@ -1,5 +1,9 @@
 export type ReturnIndexPoint = { date: string; totalReturnIndex: number };
 
+function rebasedReturnPct(value: number, baseValue: number) {
+  return Number((((value / baseValue) - 1) * 100).toFixed(2));
+}
+
 export function calculateTotalReturnForDateRange(points: ReturnIndexPoint[], startDate: string, endDate: string) {
   const period = points.filter((point) => point.date >= startDate && point.date <= endDate);
   const startingIndex = period[0]?.totalReturnIndex;
@@ -13,7 +17,7 @@ export function normalizeReturnIndex(points: ReturnIndexPoint[]) {
   if (baseIndex === undefined) return [];
   return points.map((point) => ({
     ...point,
-    normalizedReturnPct: Number((((point.totalReturnIndex / baseIndex) - 1) * 100).toFixed(2)),
+    normalizedReturnPct: rebasedReturnPct(point.totalReturnIndex, baseIndex),
   }));
 }
 
@@ -21,6 +25,22 @@ export type ComparisonOverlay = {
   data: Array<Record<string, string | number>>;
   message: string;
 };
+
+export function rebaseComparisonOverlay(data: Array<Record<string, string | number>>, symbols: string[]) {
+  const baseRow = data[0];
+  if (!baseRow) return [];
+  return data.map((row) => {
+    const rebasedRow = { ...row };
+    for (const symbol of symbols) {
+      const value = Number(row[symbol]);
+      const baseValue = Number(baseRow[symbol]);
+      rebasedRow[symbol] = Number.isFinite(value) && Number.isFinite(baseValue) && baseValue !== 0
+        ? rebasedReturnPct(value, baseValue)
+        : Number.NaN;
+    }
+    return rebasedRow;
+  });
+}
 
 export function findVerticallyClosestSeries(
   values: Record<string, number>,
@@ -47,14 +67,13 @@ export function buildComparisonOverlay(symbols: string[], histories: Record<stri
   if (!commonDates.length) return { data: [], message: "These ETFs have no overlapping history, so a comparison chart cannot be shown." };
 
   const values = Object.fromEntries(symbols.map((symbol) => [symbol, new Map((histories[symbol] ?? []).map((point) => [point.date, point.totalReturnIndex]))]));
-  const baseDate = commonDates[0];
   const data = commonDates.map((date) => {
     const row: Record<string, string | number> = { date };
     for (const symbol of symbols) {
       const series = values[symbol];
-      row[symbol] = Number((((series.get(date)! / series.get(baseDate)!) - 1) * 100).toFixed(2));
+      row[symbol] = series.get(date)!;
     }
     return row;
   });
-  return { data, message: `Common history: ${baseDate} to ${commonDates.at(-1)} (${commonDates.length} daily observations). Each series is rebased to 0% at the common start.` };
+  return { data, message: `Common history: ${commonDates[0]} to ${commonDates.at(-1)} (${commonDates.length} daily observations). Returns are rebased to 0% at the selected start date.` };
 }

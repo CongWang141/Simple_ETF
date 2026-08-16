@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { loadTypeScriptModule } from "../helpers/load-typescript.mjs";
 
-const { buildComparisonOverlay, calculateTotalReturnForDateRange, findVerticallyClosestSeries, normalizeReturnIndex } = await loadTypeScriptModule("lib/return-calculations.ts");
+const { buildComparisonOverlay, calculateTotalReturnForDateRange, findVerticallyClosestSeries, normalizeReturnIndex, rebaseComparisonOverlay } = await loadTypeScriptModule("lib/return-calculations.ts");
 
 test("normalizes a total-return index to the selected starting value", () => {
   assert.deepEqual(normalizeReturnIndex([
@@ -27,16 +27,26 @@ test("calculates total return from the available dates in a requested calendar p
   assert.equal(calculateTotalReturnForDateRange(points, "2025-01-01", "2025-12-31"), null);
 });
 
-test("uses only common dates when normalizing a comparison", () => {
+test("uses only common dates and rebases every comparison series at the selected start", () => {
   const overlay = buildComparisonOverlay(["A", "B"], {
-    A: [{ date: "2024-01-31", totalReturnIndex: 100 }, { date: "2024-02-29", totalReturnIndex: 110 }, { date: "2024-03-31", totalReturnIndex: 121 }],
-    B: [{ date: "2024-02-29", totalReturnIndex: 50 }, { date: "2024-03-31", totalReturnIndex: 55 }],
+    A: [{ date: "2024-01-31", totalReturnIndex: 100 }, { date: "2024-02-29", totalReturnIndex: 110 }, { date: "2024-03-31", totalReturnIndex: 121 }, { date: "2024-04-30", totalReturnIndex: 133.1 }],
+    B: [{ date: "2024-02-29", totalReturnIndex: 50 }, { date: "2024-03-31", totalReturnIndex: 55 }, { date: "2024-04-30", totalReturnIndex: 60.5 }],
   });
   assert.deepEqual(overlay.data, [
+    { date: "2024-02-29", A: 110, B: 50 },
+    { date: "2024-03-31", A: 121, B: 55 },
+    { date: "2024-04-30", A: 133.1, B: 60.5 },
+  ]);
+  assert.deepEqual(rebaseComparisonOverlay(overlay.data, ["A", "B"]), [
     { date: "2024-02-29", A: 0, B: 0 },
     { date: "2024-03-31", A: 10, B: 10 },
+    { date: "2024-04-30", A: 21, B: 21 },
   ]);
-  assert.match(overlay.message, /2024-02-29 to 2024-03-31/);
+  assert.deepEqual(rebaseComparisonOverlay(overlay.data.slice(1), ["A", "B"]), [
+    { date: "2024-03-31", A: 0, B: 0 },
+    { date: "2024-04-30", A: 10, B: 10 },
+  ]);
+  assert.match(overlay.message, /selected start date/);
 });
 
 test("explains comparison edge cases", () => {

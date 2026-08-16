@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { buildComparisonOverlay, calculateTotalReturnForDateRange, findVerticallyClosestSeries } from "@/lib/return-calculations";
+import { buildComparisonOverlay, calculateTotalReturnForDateRange, findVerticallyClosestSeries, rebaseComparisonOverlay } from "@/lib/return-calculations";
 import { getCalendarDateTicks, getNiceNumericAxis } from "@/lib/chart-axis";
 import type { EtfSummary, HistoricalObservation, HistoricalValuationObservation } from "@/lib/types";
 
@@ -33,10 +33,6 @@ const chartDetails: Record<ChartMetric, { label: string; colour: string }> = {
 
 function formatChartDate(date: string) {
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "2-digit" }).format(new Date(`${date}T00:00:00Z`)).replaceAll(" ", "-");
-}
-
-function formatCurrentDate() {
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date()).replaceAll(" ", "-");
 }
 
 function getAnnualReturnColumns(currentYear: number): AnnualReturnColumn[] {
@@ -101,7 +97,11 @@ function buildMetricOverlay(symbols: string[], histories: Record<string, Histori
 }
 
 function SmallMetricChart({ etfs, metric }: { etfs: EtfSummary[]; metric: ComparisonMetric }) {
-  const data = etfs.flatMap((etf) => etf[metric.key] === null ? [] : [{ symbol: etf.symbol, value: etf[metric.key] }]);
+  const data = etfs.flatMap((etf) => {
+    const value = etf[metric.key];
+    if (value === null && metric.key !== "peRatio") return [];
+    return [{ symbol: etf.symbol, value: value ?? 0 }];
+  });
   const numericAxis = metric.key === "ter"
     ? getNiceNumericAxis([0, 1], 6)
     : getNiceNumericAxis(data.map((entry) => Number(entry.value)), 4);
@@ -149,7 +149,9 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
   const overlayRows = overlay.data as Array<Record<string, string | number>>;
   const safeEndIndex = Math.min(endIndex, Math.max(0, overlay.data.length - 1));
   const visibleOverlay = overlay.data.slice(startIndex, safeEndIndex + 1);
-  const visibleRows = visibleOverlay as Array<Record<string, string | number>>;
+  const visibleRows = useMemo(() => chartMetric === "return"
+    ? rebaseComparisonOverlay(visibleOverlay, selectedSymbols)
+    : visibleOverlay as Array<Record<string, string | number>>, [chartMetric, selectedSymbols, visibleOverlay]);
   const comparisonAxis = useMemo(() => getNiceNumericAxis(visibleRows.flatMap((row) => selectedSymbols.map((symbol) => Number(row[symbol])).filter(Number.isFinite))), [selectedSymbols, visibleRows]);
   const comparisonYDomain = comparisonAxis.domain;
   const comparisonDateTicks = useMemo(() => getCalendarDateTicks(visibleRows.map((row) => String(row.date))), [visibleRows]);
@@ -184,7 +186,6 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
       <Link className="back-link" href="/">← Back to screener</Link>
       <header className="comparison-heading">
         <h1>Compare your short list</h1>
-        <p>Showing the ETFs selected on the screener. Comparison based on the data as of {formatCurrentDate()}.</p>
       </header>
 
       {selectedEtfs.length < 2 ? <EmptyComparison /> : <>
@@ -201,7 +202,7 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
           </div></div>
           {overlay.data.length ? <><div className="comparison-line-chart" ref={chartRef}>
             <ResponsiveContainer height="100%" width="100%">
-              <LineChart data={visibleOverlay} margin={{ top: 12, right: 12, bottom: 16, left: 12 }} onMouseLeave={() => setHoveredSymbol(null)} onMouseMove={selectVerticallyClosest}>
+              <LineChart data={visibleRows} margin={{ top: 12, right: 12, bottom: 16, left: 12 }} onMouseLeave={() => setHoveredSymbol(null)} onMouseMove={selectVerticallyClosest}>
                 <CartesianGrid stroke="#e9eef2" strokeDasharray="2 3" vertical />
                 <XAxis axisLine={{ stroke: "#9aa8b6", strokeWidth: 1 }} dataKey="date" dy={8} interval="preserveStartEnd" minTickGap={12} tick={{ fill: "#718096", fontSize: 12 }} tickFormatter={formatChartDate} tickLine={false} ticks={comparisonDateTicks} />
                 <YAxis axisLine={{ stroke: "#9aa8b6", strokeWidth: 1 }} domain={comparisonYDomain} ticks={comparisonAxis.ticks} tickFormatter={(value) => chartMetric === "return" ? `${Number(value).toFixed(2)}%` : chartMetric === "price" ? Number(value).toFixed(2) : `${Number(value).toFixed(2)}×`} tick={{ fill: "#718096", fontSize: 12 }} tickLine={false} width={68} />

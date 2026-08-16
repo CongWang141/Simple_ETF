@@ -116,7 +116,11 @@ export function EtfScreener({ etfs }: { etfs: EtfSummary[] }) {
                 <td>{formatFundSize(etf.fundSizeMillionUsd)}</td>
                 <td><Metric value={etf.return1yPct} /></td>
                 <td><Metric value={etf.return3yPct} /></td>
-                <td className="compare-column"><input aria-label={`Select ${etf.symbol} for comparison`} checked={compareSymbols.includes(etf.symbol)} disabled={!compareSymbols.includes(etf.symbol) && compareSymbols.length === 8} onChange={() => toggleComparison(etf.symbol)} type="checkbox" /></td>
+                <td className="compare-column">{(() => {
+                  const isSelected = compareSymbols.includes(etf.symbol);
+                  const isBlocked = !isSelected && compareSymbols.length === 8;
+                  return <span className="compare-control"><input aria-label={isBlocked ? `Cannot select ${etf.symbol}: maximum 8 ETFs can be compared` : `Select ${etf.symbol} for comparison`} checked={isSelected} disabled={isBlocked} onChange={() => toggleComparison(etf.symbol)} title={isBlocked ? "Maximum 8 ETFs can be compared" : undefined} type="checkbox" />{isBlocked && <span aria-hidden="true" className="compare-limit-indicator">×</span>}</span>;
+                })()}</td>
               </tr>
             ))}
           </tbody>

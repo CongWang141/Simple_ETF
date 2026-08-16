@@ -14,6 +14,8 @@ The screener filters and sorts the fictional universe. Each ETF route shows prof
 
 Comparison observations remain daily and use a right-side y-axis and two independently movable pointer/keyboard range handles. At the current x-axis date, highlighting compares only the cursor-to-line vertical distance in chart coordinates. It does not use Euclidean/horizontal distance or nearest-point selection. The tooltip identifies the ETF by long name before value, with ticker secondary if shown, and updates as vertical cursor position changes.
 
+For cumulative-return charts, the earliest available date (or common comparison history) is only the minimum selectable date. The current left range handle is the display rebase date and is shown as 0%; the right handle sets the end of the displayed range. For example, common history may be 2019-04-25 to 2026-08-14, while a selected range beginning 2022-01-03 rebases every displayed comparison ETF to 0% on 2022-01-03. This is a client-side display transformation only; underlying prices and total-return indexes are never changed.
+
 ## Data and financial rules
 
 Generation uses one integer seed (default 42) and one shared end date. A manual default run ends on the last Monday–Friday working day before execution; `--end-date` supplies a fixed reproducible working day. It generates valid weekdays from each inception with deterministic price profiles and a smooth documented annual distribution accrual. Starting, building, or refreshing the application never generates data. Outputs are synthetic and must never be described as real performance.
