@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { buildComparisonOverlay, findVerticallyClosestSeries } from "@/lib/return-calculations";
+import { buildComparisonOverlay, calculateTotalReturnForDateRange, findVerticallyClosestSeries } from "@/lib/return-calculations";
 import { getCalendarDateTicks, getNiceNumericAxis } from "@/lib/chart-axis";
 import type { EtfSummary, HistoricalObservation, HistoricalValuationObservation } from "@/lib/types";
 
 type NumericMetricKey = "peRatio" | "ter" | "fundSizeMillionUsd" | "return1mPct" | "returnYtdPct" | "return1yPct" | "return3yPct" | "return5yPct";
 type ComparisonMetric = { key: NumericMetricKey; title: string; suffix: string; isReturn?: boolean };
 type ChartMetric = "return" | "price" | "pe" | "pb";
+type AnnualReturnColumn = { key: "ytd" | number; label: string; startDate: string; endDate: string };
 
 const metrics: ComparisonMetric[] = [
   { key: "peRatio", title: "P/E", suffix: "×" },
@@ -36,6 +37,16 @@ function formatChartDate(date: string) {
 
 function formatCurrentDate() {
   return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date()).replaceAll(" ", "-");
+}
+
+function getAnnualReturnColumns(currentYear: number): AnnualReturnColumn[] {
+  return [
+    { key: "ytd", label: "YTD", startDate: `${currentYear}-01-01`, endDate: `${currentYear}-12-31` },
+    ...Array.from({ length: 8 }, (_, offset) => {
+      const year = currentYear - offset - 1;
+      return { key: year, label: String(year), startDate: `${year}-01-01`, endDate: `${year}-12-31` };
+    }),
+  ];
 }
 
 function formatCompactInteger(value: number) {
@@ -142,6 +153,14 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
   const comparisonAxis = useMemo(() => getNiceNumericAxis(visibleRows.flatMap((row) => selectedSymbols.map((symbol) => Number(row[symbol])).filter(Number.isFinite))), [selectedSymbols, visibleRows]);
   const comparisonYDomain = comparisonAxis.domain;
   const comparisonDateTicks = useMemo(() => getCalendarDateTicks(visibleRows.map((row) => String(row.date))), [visibleRows]);
+  const annualReturnColumns = useMemo(() => getAnnualReturnColumns(new Date().getFullYear()), []);
+  const annualReturnRows = useMemo(() => selectedEtfs.map((etf) => ({
+    etf,
+    returns: annualReturnColumns.map((column) => {
+      if (column.key !== "ytd" && etf.inceptionDate > column.startDate) return null;
+      return calculateTotalReturnForDateRange(histories[etf.symbol] ?? [], column.startDate, column.endDate);
+    }),
+  })), [annualReturnColumns, histories, selectedEtfs]);
   const updateHandle = (handle: "start" | "end", clientX: number) => {
     const bounds = rangeRef.current?.getBoundingClientRect();
     if (!bounds) return;
@@ -201,6 +220,18 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
             </span>
           </label>
           <p className="common-history-message">{overlay.message}</p></> : <p className="common-history-message">{overlay.message}</p>}
+        </section>
+        <section className="annual-returns-card" aria-labelledby="annual-returns-heading">
+          <h2 id="annual-returns-heading">Annual returns</h2>
+          <div className="annual-returns-table-wrap">
+            <table className="annual-returns-table">
+              <thead><tr><th>ETF</th>{annualReturnColumns.map((column) => <th key={column.key}>{column.label}</th>)}</tr></thead>
+              <tbody>{annualReturnRows.map(({ etf, returns }) => <tr key={etf.symbol}>
+                <td>{etf.name}</td>
+                {returns.map((value, index) => <td className={value === null ? "" : value > 0 ? "positive" : value < 0 ? "negative" : ""} key={annualReturnColumns[index].key}>{value === null ? "-" : `${value.toFixed(2)}%`}</td>)}
+              </tr>)}</tbody>
+            </table>
+          </div>
         </section>
       </>}
     </main>

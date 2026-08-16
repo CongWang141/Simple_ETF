@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { loadTypeScriptModule } from "../helpers/load-typescript.mjs";
 
-const { buildComparisonOverlay, findVerticallyClosestSeries, normalizeReturnIndex } = await loadTypeScriptModule("lib/return-calculations.ts");
+const { buildComparisonOverlay, calculateTotalReturnForDateRange, findVerticallyClosestSeries, normalizeReturnIndex } = await loadTypeScriptModule("lib/return-calculations.ts");
 
 test("normalizes a total-return index to the selected starting value", () => {
   assert.deepEqual(normalizeReturnIndex([
@@ -15,6 +15,16 @@ test("normalizes a total-return index to the selected starting value", () => {
     { date: "2024-03-31", totalReturnIndex: 90, normalizedReturnPct: -10 },
   ]);
   assert.deepEqual(normalizeReturnIndex([]), []);
+});
+
+test("calculates total return from the available dates in a requested calendar period", () => {
+  const points = [
+    { date: "2024-01-02", totalReturnIndex: 100 },
+    { date: "2024-06-28", totalReturnIndex: 105 },
+    { date: "2024-12-31", totalReturnIndex: 112.5 },
+  ];
+  assert.equal(calculateTotalReturnForDateRange(points, "2024-01-01", "2024-12-31"), 12.5);
+  assert.equal(calculateTotalReturnForDateRange(points, "2025-01-01", "2025-12-31"), null);
 });
 
 test("uses only common dates when normalizing a comparison", () => {

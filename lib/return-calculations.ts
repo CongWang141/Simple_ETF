@@ -1,5 +1,13 @@
 export type ReturnIndexPoint = { date: string; totalReturnIndex: number };
 
+export function calculateTotalReturnForDateRange(points: ReturnIndexPoint[], startDate: string, endDate: string) {
+  const period = points.filter((point) => point.date >= startDate && point.date <= endDate);
+  const startingIndex = period[0]?.totalReturnIndex;
+  const endingIndex = period.at(-1)?.totalReturnIndex;
+  if (startingIndex === undefined || endingIndex === undefined || startingIndex === 0) return null;
+  return Number((((endingIndex / startingIndex) - 1) * 100).toFixed(2));
+}
+
 export function normalizeReturnIndex(points: ReturnIndexPoint[]) {
   const baseIndex = points[0]?.totalReturnIndex;
   if (baseIndex === undefined) return [];
