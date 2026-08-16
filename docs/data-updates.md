@@ -5,7 +5,7 @@ of truth; `data/simple_etf.sqlite` is generated and must not be edited by hand.
 
 ## Refresh workflow
 
-1. Update ETF facts in `data/source/etfs.csv`, or run `npm run data:generate`
+1. Update ETF facts in `data/source/etfs.csv`, or manually run `npm run data:generate`
    to regenerate the 72-ETF fictional universe. The generated universe has at
    least five ETFs for every available filter value.
 2. Add directly reported quarterly P/E and P/B observations to
@@ -19,7 +19,7 @@ of truth; `data/simple_etf.sqlite` is generated and must not be edited by hand.
    ```
 
    This regenerates yearly daily-price files in `prices/`, quarterly valuation
-   files in `fundamentals/`, and the latest compact screener snapshot in `metrics/`.
+   files in `fundamentals/`, and the latest compact screener snapshot in `metrics/` through the last working day before execution. Starting Next.js never triggers this step; use `--end-date YYYY-MM-DD` for an exact historical run.
 
 3. Recreate and check the SQLite database:
 

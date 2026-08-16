@@ -225,6 +225,7 @@ export function EtfComparison({ etfs, histories, valuationHistories, initialSele
           <h2 id="annual-returns-heading">Annual returns</h2>
           <div className="annual-returns-table-wrap">
             <table className="annual-returns-table">
+              <colgroup><col className="annual-returns-name-column" /><col span={9} /></colgroup>
               <thead><tr><th>ETF</th>{annualReturnColumns.map((column) => <th key={column.key}>{column.label}</th>)}</tr></thead>
               <tbody>{annualReturnRows.map(({ etf, returns }) => <tr key={etf.symbol}>
                 <td>{etf.name}</td>

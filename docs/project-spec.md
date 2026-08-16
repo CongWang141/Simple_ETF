@@ -16,7 +16,7 @@ Comparison observations remain daily and use a right-side y-axis and two indepen
 
 ## Data and financial rules
 
-Generation uses one integer seed (default 42), a fixed 2025-12-31 end date, valid weekdays from each inception, deterministic price profiles, and a smooth documented annual distribution accrual. Outputs are synthetic and must never be described as real performance.
+Generation uses one integer seed (default 42) and one shared end date. A manual default run ends on the last Monday–Friday working day before execution; `--end-date` supplies a fixed reproducible working day. It generates valid weekdays from each inception with deterministic price profiles and a smooth documented annual distribution accrual. Starting, building, or refreshing the application never generates data. Outputs are synthetic and must never be described as real performance.
 
 Stock P/E and P/B derive from positive aggregate market value, earnings, and book value. Non-positive, tiny, non-finite denominators produce unavailable ratios rather than zero, infinity, or NaN. Current fixtures use valid positive Stock denominators. Bond and Commodity P/E/P/B are always unavailable: null metrics and no history rows. Between reports, per-unit fundamentals remain fixed while daily prices move the ratios.
 

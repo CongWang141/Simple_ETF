@@ -1,6 +1,7 @@
 """Generate a compact latest return snapshot from canonical daily price files."""
 
 import csv
+from calendar import monthrange
 from datetime import date
 from pathlib import Path
 
@@ -26,8 +27,15 @@ def value_on_or_before(values: list[tuple[date, float]], target: date) -> float:
     return available[-1]
 
 
+def shift_months(day: date, months: int) -> date:
+    month_index = day.year * 12 + day.month - 1 - months
+    year, month_zero_index = divmod(month_index, 12)
+    month = month_zero_index + 1
+    return date(year, month, min(day.day, monthrange(year, month)[1]))
+
+
 def main() -> None:
-    seed_argument(__doc__ or "Generate latest metrics.")
+    args = seed_argument(__doc__ or "Generate latest metrics.")
     etfs = {row["symbol"]: row for row in read_csv(SOURCE / "etfs.csv")}
     prices = [row for path in sorted((SOURCE / "prices").glob("*.csv")) for row in read_csv(path)]
     by_symbol: dict[str, list[dict[str, str]]] = {}
@@ -50,11 +58,14 @@ def main() -> None:
             previous_price, previous_date = float(observation["close_price"]), observation_date
 
         end_date, end_value = values[-1]
+        if end_date != args.end_date:
+            raise AssertionError(f"Metrics for {symbol} ended at {end_date}, expected {args.end_date}")
         bases = {
-            "return_1m_pct": date(2025, 11, 30), "return_3m_pct": date(2025, 9, 30),
-            "return_6m_pct": date(2025, 6, 30), "return_ytd_pct": date(2024, 12, 31),
-            "return_1y_pct": date(2024, 12, 31), "return_3y_pct": date(2022, 12, 31),
-            "return_5y_pct": date(2020, 12, 31),
+            "return_1m_pct": shift_months(end_date, 1), "return_3m_pct": shift_months(end_date, 3),
+            "return_6m_pct": shift_months(end_date, 6), "return_ytd_pct": date(end_date.year - 1, 12, 31),
+            "return_1y_pct": date(end_date.year - 1, end_date.month, min(end_date.day, monthrange(end_date.year - 1, end_date.month)[1])),
+            "return_3y_pct": date(end_date.year - 3, end_date.month, min(end_date.day, monthrange(end_date.year - 3, end_date.month)[1])),
+            "return_5y_pct": date(end_date.year - 5, end_date.month, min(end_date.day, monthrange(end_date.year - 5, end_date.month)[1])),
         }
         row = {
             "symbol": symbol,
@@ -65,7 +76,11 @@ def main() -> None:
         rows.append(row)
 
     fields = ["symbol", "as_of_date", "return_1m_pct", "return_3m_pct", "return_6m_pct", "return_ytd_pct", "return_1y_pct", "return_3y_pct", "return_5y_pct", "return_since_inception_pct"]
-    output = SOURCE / "metrics" / f"{rows[0]['as_of_date']}.csv"
+    metrics_directory = SOURCE / "metrics"
+    metrics_directory.mkdir(parents=True, exist_ok=True)
+    for path in metrics_directory.glob("*.csv"):
+        path.unlink()
+    output = metrics_directory / f"{rows[0]['as_of_date']}.csv"
     with output.open("w", newline="", encoding="utf-8") as output_file:
         writer = csv.DictWriter(output_file, fieldnames=fields)
         writer.writeheader()

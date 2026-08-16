@@ -30,9 +30,9 @@ def quarter_end(year: int, month: int) -> date:
 def main() -> None:
     args = seed_argument(__doc__ or "Generate valuation fundamentals.")
     rows: list[list[str]] = []
+    quarters = [(2009, 12)] + [(year, month) for year in range(2010, args.end_date.year + 1) for month in (3, 6, 9, 12) if quarter_end(year, month) <= args.end_date]
     for index, (base_pe, base_pb) in VALUATION_ANCHORS.items():
         generator = random.Random(f"simple-etf-valuations-v3-{args.seed}-{index}")
-        quarters = [(2009, 12)] + [(year, month) for year in range(2010, 2026) for month in (3, 6, 9, 12)]
         for position, (year, month) in enumerate(quarters):
             cycle = math.sin(position * 0.42) * 0.075 + math.cos(position * 0.16) * 0.035
             market_value = 1_000_000_000 * (1 + position * 0.012) * (1 + cycle)

@@ -7,13 +7,15 @@ from collections import defaultdict
 from datetime import date
 from pathlib import Path
 
+from generation import last_working_day_before
+
 DATABASE_PATH = Path(__file__).resolve().parents[1] / "data" / "simple_etf.sqlite"
 EXPECTED_INDEXES = {"idx_etfs_filters"}
 COUNTRY_REGIONS = {"China": "Asia", "Japan": "Asia", "Korea": "Asia", "France": "Europe", "Germany": "Europe", "Italy": "Europe", "UK": "Europe", "US": "America", "Canada": "America"}
 
 
-def scalar(connection: sqlite3.Connection, sql: str):
-    return connection.execute(sql).fetchone()[0]
+def scalar(connection: sqlite3.Connection, sql: str, parameters: tuple = ()):
+    return connection.execute(sql, parameters).fetchone()[0]
 
 
 def require(condition: bool, message: str) -> None:
@@ -35,8 +37,9 @@ def main() -> None:
         require(scalar(connection, "SELECT COUNT(*) FROM (SELECT symbol FROM etfs GROUP BY symbol HAVING COUNT(*) > 1)") == 0, "Duplicate ticker")
         require(scalar(connection, "SELECT COUNT(*) FROM (SELECT isin FROM etfs GROUP BY isin HAVING COUNT(*) > 1)") == 0, "Duplicate ISIN")
         require(scalar(connection, "SELECT COUNT(*) FROM etfs WHERE symbol='' OR isin='' OR name='' OR asset_class NOT IN ('Stock','Bond','Commodity')") == 0, "Invalid required metadata")
-        require(scalar(connection, "SELECT COUNT(*) FROM etfs WHERE ter<0 OR fund_size_million_usd<0 OR inception_date>'2025-12-31'") == 0, "Invalid fund facts")
-        require(scalar(connection, "SELECT COUNT(*) FROM price_history WHERE close_price<=0 OR date>'2025-12-31'") == 0, "Invalid prices or future dates")
+        latest_permitted_date = last_working_day_before(date.today()).isoformat()
+        require(scalar(connection, "SELECT COUNT(*) FROM etfs WHERE ter<0 OR fund_size_million_usd<0") == 0, "Invalid fund facts")
+        require(scalar(connection, "SELECT COUNT(*) FROM price_history WHERE close_price<=0 OR date>?", (latest_permitted_date,)) == 0, "Invalid prices or future dates")
         for row in connection.execute("SELECT country,region,asset_class,industry,strategy FROM etfs"):
             require(COUNTRY_REGIONS.get(row["country"]) == row["region"], "Invalid country/region combination")
             expected_classification = row["asset_class"] == "Stock"

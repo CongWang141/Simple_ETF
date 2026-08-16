@@ -27,9 +27,6 @@ PROFILES = {
     "Government Bond": (0.031, 0.07, 100.00, "USD"),
     "Broad Commodity": (0.042, 0.25, 100.00, "USD"),
 }
-END_DATE = date(2025, 12, 31)
-
-
 def read_etfs() -> list[dict[str, str]]:
     with (SOURCE / "etfs.csv").open(newline="", encoding="utf-8") as input_file:
         return list(csv.DictReader(input_file))
@@ -68,7 +65,7 @@ def main() -> None:
         generator = random.Random(f"simple-etf-daily-v3-{args.seed}-{etf['symbol']}")
         price = base_price * (0.82 + generator.random() * 0.36)
         start = date.fromisoformat(etf["inception_date"])
-        for current in business_days(start, END_DATE):
+        for current in business_days(start, args.end_date):
             daily_rate = annual_return / 252 + market_cycle(current) + generator.gauss(0, volatility / math.sqrt(252))
             price *= 1 + max(-0.095, min(0.095, daily_rate))
             by_year.setdefault(current.year, []).append([etf["symbol"], current.isoformat(), f"{price:.4f}", currency])
@@ -81,7 +78,10 @@ def main() -> None:
             writer = csv.writer(output_file)
             writer.writerow(["symbol", "date", "close_price", "currency"])
             writer.writerows(sorted(rows, key=lambda row: (row[0], row[1])))
-    print(f"Generated daily price partitions for {len(read_etfs())} ETFs ({min(by_year)}–{max(by_year)}).")
+    latest_date = max(date.fromisoformat(row[1]) for rows in by_year.values() for row in rows)
+    if latest_date != args.end_date:
+        raise AssertionError(f"Price history ended at {latest_date}, expected {args.end_date}")
+    print(f"Generated daily price partitions for {len(read_etfs())} ETFs ({min(by_year)}–{max(by_year)}) through {args.end_date}.")
 
 
 if __name__ == "__main__":

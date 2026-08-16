@@ -19,6 +19,12 @@ npm run build
 
 A missing database requires seeding; missing CSVs require generation. Fix schema/type mismatches at explicit projections rather than casting them away.
 
+## Updating synthetic data
+
+Data generation is manual. When new local historical data is required, run `npm run data:generate -- --seed 42`; it selects the last Monday–Friday working day before execution, writes CSV source files, and does nothing further automatically. Review the files, run `npm run db:seed`, then `npm run db:check` before starting or using the application. Starting Next.js never regenerates data.
+
+For debugging or exact reproduction, add `--end-date YYYY-MM-DD`, for example `npm run data:generate -- --seed 42 --end-date 2026-08-14`. See [data-pipeline.md](data-pipeline.md) for the authoritative rules.
+
 ## Common changes
 
 - New ETF field: update the metadata generator and CSV dictionary, schema/import list, validator, explicit server query, shared type, relevant UI, and tests.

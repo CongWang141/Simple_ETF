@@ -18,7 +18,7 @@ GENERATORS = (
 def main() -> None:
     args = seed_argument(__doc__ or "Generate all source data.")
     for script in GENERATORS:
-        subprocess.run([sys.executable, str(ROOT / "scripts" / script), "--seed", str(args.seed)], check=True)
+        subprocess.run([sys.executable, str(ROOT / "scripts" / script), "--seed", str(args.seed), "--end-date", args.end_date.isoformat()], check=True)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 # Architecture
 
-The data flow is deterministic Python generators → generated CSV files → SQLite rebuild → server-only queries → Next.js server routes → focused React client components.
+The data flow is manual deterministic Python generation → generated CSV files → SQLite rebuild → server-only queries → Next.js server routes → focused React client components.
 
-`generate_data.py` passes one seed through metadata, prices, valuation fundamentals, and metrics. `seed_database.py` recreates SQLite; the application never writes to it.
+`generate_data.py` resolves one seed and one end date, then passes both through metadata, prices, valuation fundamentals, and metrics. `seed_database.py` recreates SQLite; the application never writes to it. Generation is explicitly run from the command line, never by Next.js.
 
 - `app/page.tsx` loads compact summaries; `EtfScreener` owns filters, sorting, and selection.
 - `app/etfs/[symbol]/page.tsx` loads one ETF and its histories; the chart owns range interaction.
@@ -13,7 +13,7 @@ Database access stays server-side. Only serializable summaries and requested his
 
 ## Responsibilities and boundaries
 
-- `scripts/generate_*.py` own all synthetic financial assumptions and CSV production. `scripts/generation.py` owns the single default-seed interface.
+- `scripts/generate_*.py` own all synthetic financial assumptions and CSV production. `scripts/generation.py` owns the seed plus the shared manual end-date interface.
 - `scripts/seed_database.py` owns schema creation, CSV loading, total-return construction, and quarterly-to-daily valuation derivation. `scripts/verify_database.py` independently checks those results.
 - `lib/db.ts` opens one local database read-only. `lib/etfs.ts` is the server-only query boundary and uses explicit projections and parameter binding. `lib/types.ts` is the shared serializable domain contract.
 - Route files are server components. They validate route input and request only the summaries or histories needed by that page.

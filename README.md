@@ -18,7 +18,23 @@ npm run db:check
 npm run dev
 ```
 
-The default seed is `42`. Useful checks are `npm run db:check`, `npm test`, `npm run test:db`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`. `npm run data:reproducibility -- --seed 42` performs two complete generations/rebuilds and compares every generated CSV byte plus a canonical logical SQLite dump.
+## Synthetic Data
+
+This project uses fictional ETF data. Regenerate it manually with:
+
+```bash
+npm run data:generate -- --seed 42
+```
+
+The generator creates data through the last working day before execution; starting or refreshing Next.js never regenerates it. To reproduce a particular dataset exactly, use a fixed date:
+
+```bash
+npm run data:generate -- --seed 42 --end-date 2026-08-14
+```
+
+Then run `npm run db:seed` and `npm run db:check`. See the [data pipeline](docs/data-pipeline.md) and [reproducibility checklist](docs/reproducibility-checklist.md) for the complete workflow.
+
+The default seed is `42`. Useful checks are `npm run db:check`, `npm test`, `npm run test:db`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`. `npm run data:reproducibility -- --seed 42 --end-date 2026-08-14` performs two complete generations/rebuilds and compares every generated CSV byte plus a canonical logical SQLite dump.
 
 ## Structure
 
